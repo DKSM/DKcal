@@ -107,6 +107,7 @@ router.post('/items', async (req, res, next) => {
     const item = {
       id: uuidv4(),
       name: req.body.name.trim(),
+      description: req.body.description || '',
       mode: req.body.mode,
       created: now,
       updated: now,
@@ -161,6 +162,7 @@ router.put('/items/:id', async (req, res, next) => {
     const item = {
       ...items[idx],
       name: req.body.name.trim(),
+      description: req.body.description || '',
       mode: req.body.mode,
       updated: new Date().toISOString(),
     };

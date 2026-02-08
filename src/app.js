@@ -56,7 +56,9 @@ app.get('/api/estimate', async (req, res, next) => {
     const q = req.query.q;
     if (!q) return res.status(400).json({ error: 'q parameter required' });
     const unit = req.query.unit || '100g';
-    const result = await estimateNutrition(q, unit);
+    const desc = req.query.desc || '';
+    const fullQuery = desc ? `${q} (${desc})` : q;
+    const result = await estimateNutrition(fullQuery, unit);
     res.json(result);
   } catch (err) {
     next(err);
