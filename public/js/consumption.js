@@ -2,6 +2,7 @@ import { createElement, debounce, showToast } from './utils.js';
 import { api } from './api.js';
 import { openModal } from './modal.js';
 import { openItemForm } from './items.js';
+import { adjustCal } from './profile.js';
 
 export function openAddConsumption(dateStr, onDone) {
   openModal('Ajouter une consommation', (body, handle) => {
@@ -144,7 +145,7 @@ export function openAddConsumption(dateStr, onDone) {
       }
       for (const item of items) {
         const computed = item.computed || {};
-        const kcalStr = computed.kcal != null ? `${Math.round(computed.kcal)} kcal` : '';
+        const kcalStr = computed.kcal != null ? `${adjustCal(Math.round(computed.kcal))} kcal` : '';
         const freqStr = item.frequency ? `${item.frequency}x` : '';
         const detailParts = [kcalStr, freqStr].filter(Boolean).join(' · ');
         const el = createElement('div', { className: 'search-result-item', onClick: () => selectItem(item) }, [

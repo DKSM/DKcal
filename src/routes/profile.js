@@ -26,6 +26,7 @@ router.put('/profile', async (req, res, next) => {
     if (req.body.activityMode !== undefined) existing.activityMode = req.body.activityMode;
     if (req.body.customActivity !== undefined) existing.customActivity = req.body.customActivity;
     if (req.body.maintenanceCalories !== undefined) existing.maintenanceCalories = req.body.maintenanceCalories;
+    if (req.body.calorieAdjust !== undefined) existing.calorieAdjust = req.body.calorieAdjust;
 
     await storage.writeProfile(userId, existing);
     res.json(existing);

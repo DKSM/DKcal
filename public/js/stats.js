@@ -1,6 +1,7 @@
 import { createElement, todayStr, addDays, showToast } from './utils.js';
 import { api } from './api.js';
 import { openModal } from './modal.js';
+import { adjustCal } from './profile.js';
 
 let chartInstances = [];
 
@@ -102,8 +103,8 @@ function renderCharts(container, stats) {
 
   // Kcal chart
   chartInstances.push(createChart(container, 'Calories', stats.dates, [
-    { label: 'kcal', data: stats.kcal.values, type: 'bar', backgroundColor: 'rgba(230, 126, 34, 0.6)', borderColor: '#e67e22', borderWidth: 1 },
-    { label: 'Moy. 7j', data: stats.kcal.movingAvg, type: 'line', borderColor: '#f39c12', borderWidth: 2, pointRadius: 0, fill: false },
+    { label: 'kcal', data: stats.kcal.values.map(v => v != null ? adjustCal(v) : v), type: 'bar', backgroundColor: 'rgba(230, 126, 34, 0.6)', borderColor: '#e67e22', borderWidth: 1 },
+    { label: 'Moy. 7j', data: stats.kcal.movingAvg.map(v => v != null ? adjustCal(v) : v), type: 'line', borderColor: '#f39c12', borderWidth: 2, pointRadius: 0, fill: false },
   ]));
 
   // Protein chart
@@ -184,7 +185,7 @@ function renderSummary(container, summary) {
   container.innerHTML = '';
 
   const cards = [
-    { label: 'Moy. kcal', value: summary.avgKcal || '-' },
+    { label: 'Moy. kcal', value: summary.avgKcal ? adjustCal(summary.avgKcal) : '-' },
     { label: 'Moy. prot.', value: summary.avgProtein ? `${summary.avgProtein}g` : '-' },
     { label: 'Moy. lip.', value: summary.avgFat ? `${summary.avgFat}g` : '-' },
     { label: 'Moy. gluc.', value: summary.avgCarbs ? `${summary.avgCarbs}g` : '-' },

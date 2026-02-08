@@ -17,6 +17,11 @@ export function getProfile() {
   return cachedProfile || {};
 }
 
+export function adjustCal(val) {
+  const pct = (cachedProfile?.calorieAdjust || 0) / 100;
+  return Math.round(val * (1 + pct));
+}
+
 // Mifflin-St Jeor BMR calculation
 function calculateBMR(sex, age, weight) {
   if (!sex || !age || !weight) return null;
@@ -185,6 +190,20 @@ export function openProfileModal(onSaved) {
     }
     updateMaintenance();
 
+    // Calorie adjustment
+    const adjustGroup = createElement('div', { className: 'form-group' });
+    adjustGroup.appendChild(createElement('label', { textContent: 'Ajustement calorique (%)' }));
+    adjustGroup.appendChild(createElement('div', {
+      className: 'form-hint',
+      textContent: 'Applique un pourcentage sur toutes les calories affichées (ex : +10 si tu penses sous-estimer). Purement visuel, ne modifie pas les données.',
+    }));
+    const adjustInput = createElement('input', {
+      className: 'input', type: 'number', min: '-50', max: '100', step: '1',
+      placeholder: '0', value: profile.calorieAdjust || '',
+    });
+    adjustGroup.appendChild(adjustInput);
+    body.appendChild(adjustGroup);
+
     // Save button
     const saveBtn = createElement('button', {
       className: 'btn btn-primary',
@@ -204,6 +223,7 @@ export function openProfileModal(onSaved) {
           activityMode,
           customActivity,
           maintenanceCalories,
+          calorieAdjust: adjustInput.value ? parseInt(adjustInput.value) : 0,
         };
         try {
           cachedProfile = await api.put('/api/profile', payload);

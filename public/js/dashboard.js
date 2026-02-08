@@ -3,7 +3,7 @@ import { api } from './api.js';
 import { openAddConsumption, openTempItemForm } from './consumption.js';
 import { openItemsModal, openItemForm } from './items.js';
 import { openStatsModal } from './stats.js';
-import { loadProfile, getProfile, openProfileModal } from './profile.js';
+import { loadProfile, getProfile, openProfileModal, adjustCal } from './profile.js';
 import { logout } from './auth.js';
 
 let currentDate = todayStr();
@@ -92,7 +92,7 @@ function renderDay() {
   $('#date-label').textContent = formatDate(currentDate);
 
   // Totals
-  $('#total-kcal').textContent = Math.round(currentDay.totals.kcal).toLocaleString();
+  $('#total-kcal').textContent = adjustCal(Math.round(currentDay.totals.kcal)).toLocaleString();
   $('#total-protein').textContent = Math.round(currentDay.totals.protein);
   $('#total-fat').textContent = Math.round(currentDay.totals.fat || 0);
   $('#total-carbs').textContent = Math.round(currentDay.totals.carbs || 0);
@@ -133,7 +133,7 @@ function renderDay() {
         createElement('div', { className: 'entry-detail', textContent: `${entry.qty} ${entry.unitType}` }),
       ]),
       createElement('div', { className: 'entry-nutrition' }, [
-        createElement('span', { className: 'entry-kcal', textContent: `${Math.round(entry.kcal)} kcal` }),
+        createElement('span', { className: 'entry-kcal', textContent: `${adjustCal(Math.round(entry.kcal))} kcal` }),
         createElement('span', { className: 'entry-macros' }, macroSpans),
       ]),
       createElement('button', {
@@ -167,7 +167,7 @@ function updateDeficitDisplay() {
     return;
   }
 
-  const consumed = currentDay ? Math.round(currentDay.totals.kcal) : 0;
+  const consumed = currentDay ? adjustCal(Math.round(currentDay.totals.kcal)) : 0;
   const pct = Math.round((consumed / maintenance) * 100);
 
   barFill.style.width = `${Math.min(pct, 100)}%`;

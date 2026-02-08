@@ -1,6 +1,7 @@
 import { createElement, showToast, debounce } from './utils.js';
 import { api } from './api.js';
 import { openModal, closeModal } from './modal.js';
+import { adjustCal } from './profile.js';
 
 export function openItemsModal(onDone) {
   openModal('Aliments', (body, handle) => {
@@ -41,7 +42,7 @@ export function openItemsModal(onDone) {
       }
       for (const item of items) {
         const computed = item.computed || {};
-        const kcalStr = computed.kcal != null ? `${Math.round(computed.kcal)} kcal` : '?';
+        const kcalStr = computed.kcal != null ? `${adjustCal(Math.round(computed.kcal))} kcal` : '?';
         const modeLabel = item.mode === 'per_100' ? (item.baseUnit === 'ml' ? '/100ml' : '/100g') : item.mode === 'per_unit' ? '/unité' : 'recette';
 
         const el = createElement('div', { className: 'item-list-entry', onClick: () => {
