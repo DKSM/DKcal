@@ -68,7 +68,7 @@ function bindActionButtons() {
 
 function bindProfileButton() {
   $('#btn-profile').addEventListener('click', () => {
-    openProfileModal(() => updateDeficitDisplay());
+    openProfileModal(() => renderDay());
   });
 }
 
