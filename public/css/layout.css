@@ -569,3 +569,112 @@ body::before {
 
 .footer-stat .dot.orange { background: var(--accent); }
 .footer-stat .dot.blue { background: var(--protein-color); }
+
+/* ========================================
+   RESPONSIVE MOBILE (max-width: 768px)
+   ======================================== */
+@media (max-width: 768px) {
+
+  /* Login */
+  #login-form {
+    width: 90%;
+    max-width: 340px;
+  }
+
+  /* Navbar: stack brand left, date center, actions right */
+  .navbar {
+    padding: 0 var(--sp-sm);
+    gap: var(--sp-sm);
+  }
+
+  .navbar-brand h1 {
+    display: none;
+  }
+
+  .date-nav .date-label {
+    min-width: 100px;
+    font-size: 0.82rem;
+  }
+
+  .navbar-actions {
+    gap: 4px;
+  }
+
+  /* Hide text labels on nav buttons, keep icons */
+  .nav-btn {
+    padding: 7px 10px;
+    font-size: 0;
+    gap: 0;
+  }
+
+  .nav-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .nav-btn-primary {
+    font-size: 0;
+  }
+
+  /* Main content */
+  .main-content {
+    padding: var(--sp-md) var(--sp-sm);
+  }
+
+  /* Summary cards: horizontal row, compact */
+  .summary-row {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--sp-sm);
+  }
+
+  .summary-card {
+    padding: var(--sp-md) var(--sp-sm);
+  }
+
+  .summary-card .card-icon {
+    width: 32px;
+    height: 32px;
+    margin-bottom: var(--sp-sm);
+  }
+
+  .summary-card .card-value {
+    font-size: 1.4rem;
+  }
+
+  .card-weight .weight-input-wrap input {
+    font-size: 1.4rem;
+    width: 80px;
+  }
+
+  .summary-card .card-label {
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+  }
+
+  /* Consumption list */
+  .entry-item {
+    padding: var(--sp-sm) var(--sp-md);
+  }
+
+  .entry-nutrition {
+    flex-direction: column;
+    gap: 2px;
+    align-items: flex-end;
+    margin-left: var(--sp-sm);
+  }
+
+  .entry-delete {
+    opacity: 1;
+    margin-left: var(--sp-sm);
+  }
+
+  #consumption-list {
+    max-height: calc(100vh - var(--navbar-height) - 240px);
+  }
+
+  /* Footer */
+  .footer-bar {
+    gap: var(--sp-md);
+    font-size: 0.7rem;
+  }
+}

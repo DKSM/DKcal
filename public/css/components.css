@@ -358,3 +358,58 @@ select.input {
 .toast.error {
   border-left-color: var(--danger);
 }
+
+/* ========================================
+   RESPONSIVE MOBILE (max-width: 768px)
+   ======================================== */
+@media (max-width: 768px) {
+
+  /* Bigger touch targets for inputs */
+  .input {
+    padding: 12px 14px;
+    font-size: 1rem;
+  }
+
+  .btn {
+    padding: 12px 18px;
+    font-size: 0.9rem;
+  }
+
+  /* Tabs: smaller text to fit 4 tabs */
+  .tab {
+    padding: 8px 6px;
+    font-size: 0.72rem;
+  }
+
+  /* Period selector */
+  .period-selector {
+    flex-wrap: wrap;
+  }
+
+  .period-btn {
+    padding: 8px 10px;
+    font-size: 0.75rem;
+  }
+
+  /* Stats summary: 2 columns on mobile */
+  .stats-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Component rows */
+  .component-row {
+    flex-wrap: wrap;
+  }
+
+  /* Toast: wider on mobile */
+  .toast {
+    left: var(--sp-md);
+    right: var(--sp-md);
+    transform: translateX(0) translateY(100px);
+    text-align: center;
+  }
+
+  .toast.show {
+    transform: translateX(0) translateY(0);
+  }
+}

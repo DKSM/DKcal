@@ -30,10 +30,25 @@
   letter-spacing: 1px;
 }
 
-/* Stack on narrow screens */
+/* Stack on narrow/medium screens */
 @media (max-width: 900px) {
   .charts-grid {
     grid-template-columns: 1fr;
+  }
+
+  .chart-container canvas {
+    height: 200px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .custom-range {
+    flex-wrap: wrap;
+  }
+
+  .custom-range input[type="date"] {
+    flex: 1;
+    min-width: 0;
   }
 }
 
