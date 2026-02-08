@@ -1,0 +1,68 @@
+/* Charts grid layout */
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-md);
+  margin-bottom: var(--sp-lg);
+}
+
+.chart-container {
+  position: relative;
+  width: 100%;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--sp-md);
+  min-width: 0;
+}
+
+.chart-container canvas {
+  width: 100% !important;
+  height: 260px !important;
+}
+
+.chart-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: var(--sp-sm);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Stack on narrow screens */
+@media (max-width: 900px) {
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Custom date range */
+.custom-range {
+  display: none;
+  gap: var(--sp-sm);
+  align-items: center;
+  margin-bottom: var(--sp-md);
+}
+
+.custom-range.active {
+  display: flex;
+}
+
+.custom-range input[type="date"] {
+  background: var(--bg-primary);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  padding: 6px 10px;
+  font-size: 0.8rem;
+}
+
+.custom-range input[type="date"]:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.custom-range input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.6);
+}

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DKcal</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔥</text></svg>">
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/modal.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/charts.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- ==================== LOGIN ==================== -->
+    <div id="login-screen">
+      <div class="login-brand">
+        <svg class="login-logo" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="flame-grad" x1="32" y1="0" x2="32" y2="64" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#ffaa55"/>
+              <stop offset="100%" stop-color="#ff6b18"/>
+            </linearGradient>
+          </defs>
+          <circle cx="32" cy="32" r="30" fill="rgba(255,140,50,0.08)" stroke="url(#flame-grad)" stroke-width="1.5"/>
+          <path d="M32 12c0 0-14 12-14 24a14 14 0 0 0 28 0c0-5-3-10-6-14-1 4-4 7-8 7s-6-4-6-8c0-3 2-6 6-9z" fill="url(#flame-grad)" opacity="0.9"/>
+          <path d="M32 28c3-3 6-2 6 2s-3 7-6 9c-3-2-6-5-6-9s3-5 6-2z" fill="#ffcc80" opacity="0.7"/>
+        </svg>
+        <h1>DKcal</h1>
+        <span class="login-subtitle">Suivi nutritionnel</span>
+      </div>
+      <form id="login-form">
+        <input class="input" type="password" placeholder="Mot de passe" required autocomplete="current-password">
+        <button class="btn btn-primary" type="submit">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </form>
+      <div id="login-error"></div>
+    </div>
+
+    <!-- ==================== DASHBOARD ==================== -->
+    <div id="dashboard">
+
+      <!-- NAVBAR -->
+      <nav class="navbar">
+        <div class="navbar-brand">
+          <svg class="logo-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="nav-flame" x1="32" y1="0" x2="32" y2="64" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#ffaa55"/>
+                <stop offset="100%" stop-color="#ff6b18"/>
+              </linearGradient>
+            </defs>
+            <path d="M32 8c0 0-16 14-16 28a16 16 0 0 0 32 0c0-6-3-11-7-16-1 5-5 8-9 8s-7-5-7-9c0-4 3-7 7-11z" fill="url(#nav-flame)"/>
+            <path d="M32 24c3-3 7-2 7 3s-4 8-7 10c-3-2-7-5-7-10s4-6 7-3z" fill="#ffcc80" opacity="0.6"/>
+          </svg>
+          <h1>DKcal</h1>
+        </div>
+
+        <div class="navbar-center">
+          <div class="date-nav">
+            <button id="date-prev">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <span id="date-label" class="date-label"></span>
+            <button id="date-next">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="navbar-actions">
+          <button id="btn-add" class="nav-btn nav-btn-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            Ajouter
+          </button>
+          <button id="btn-items" class="nav-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>
+            Aliments
+          </button>
+          <button id="btn-stats" class="nav-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+            Stats
+          </button>
+          <button id="btn-logout" class="nav-btn nav-btn-logout" title="Deconnexion">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+          </button>
+        </div>
+      </nav>
+
+      <!-- MAIN CONTENT -->
+      <div class="main-content">
+
+        <!-- Summary Cards -->
+        <div class="summary-row">
+
+          <div class="summary-card card-kcal">
+            <div class="card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2c0 0-8 7-8 14a8 8 0 0016 0c0-3-2-6-4-9-.5 3-2 5-4 5s-4-3-4-5c0-2 1-4 4-5z"/></svg>
+            </div>
+            <div id="total-kcal" class="card-value">0</div>
+            <div class="card-label">Calories</div>
+          </div>
+
+          <div class="summary-card card-protein">
+            <div class="card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12s1.5 2 4 2 4-2 4-2M8 8h.01M16 8h.01"/></svg>
+            </div>
+            <div id="total-protein" class="card-value">0</div>
+            <div class="card-label">Proteines (g)</div>
+          </div>
+
+          <div class="summary-card card-weight">
+            <div class="card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18L18 6M8 6h2v2M16 18h-2v-2"/></svg>
+            </div>
+            <div class="weight-input-wrap">
+              <input id="weight-input" type="number" step="0.1" min="0" max="500" placeholder="--">
+              <span class="unit">kg</span>
+            </div>
+            <div class="card-label">Poids</div>
+          </div>
+
+        </div>
+
+        <!-- Consumption Panel -->
+        <div class="consumption-panel">
+          <div class="panel-header">
+            <h2>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+              Consommations
+              <span id="entry-count" class="entry-count">0</span>
+            </h2>
+          </div>
+          <div id="consumption-list">
+            <div class="empty-state">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+              Aucune consommation
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- FOOTER -->
+      <div class="footer-bar">
+        <div class="footer-stat">
+          <span class="dot"></span>
+          DKcal v1.0
+        </div>
+        <div class="footer-stat">
+          <span class="dot orange"></span>
+          Port 3001
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>
