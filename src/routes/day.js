@@ -51,19 +51,20 @@ router.put('/day/:date', async (req, res, next) => {
       const e = req.body.addEntry;
 
       if (e.temporary) {
-        // Temporary item — values provided directly
+        // Temporary item — values provided per unit, multiply by qty
+        const qty = e.qty || 1;
         existing.entries.push({
           id: uuidv4(),
           itemId: null,
           temporary: true,
           itemName: e.itemName || 'Temporaire',
-          qty: e.qty || 1,
+          qty,
           unitType: e.unitType || 'unit',
           time: e.time || new Date().toTimeString().slice(0, 5),
-          kcal: e.kcal || 0,
-          protein: e.protein || 0,
-          fat: e.fat || 0,
-          carbs: e.carbs || 0,
+          kcal: Math.round((e.kcal || 0) * qty * 100) / 100,
+          protein: Math.round((e.protein || 0) * qty * 100) / 100,
+          fat: Math.round((e.fat || 0) * qty * 100) / 100,
+          carbs: Math.round((e.carbs || 0) * qty * 100) / 100,
         });
       } else {
         if (!e.itemId || typeof e.qty !== 'number' || !['g', 'ml', 'unit'].includes(e.unitType)) {
