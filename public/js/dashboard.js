@@ -3,6 +3,7 @@ import { api } from './api.js';
 import { openAddConsumption, openTempItemForm } from './consumption.js';
 import { openItemsModal, openItemForm } from './items.js';
 import { openStatsModal } from './stats.js';
+import { loadProfile, getProfile, openProfileModal } from './profile.js';
 import { logout } from './auth.js';
 
 let currentDate = todayStr();
@@ -15,6 +16,8 @@ export async function initDashboard() {
   bindDateNav();
   bindWeightInput();
   bindActionButtons();
+  bindProfileButton();
+  await loadProfile();
   await loadDay(currentDate);
 }
 
@@ -63,6 +66,12 @@ function bindActionButtons() {
   $('#btn-logout').addEventListener('click', logout);
 }
 
+function bindProfileButton() {
+  $('#btn-profile').addEventListener('click', () => {
+    openProfileModal(() => updateDeficitDisplay());
+  });
+}
+
 function changeDate(offset) {
   currentDate = addDays(currentDate, offset);
   loadDay(currentDate);
@@ -106,6 +115,7 @@ function renderDay() {
         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
         Aucune consommation
       </div>`;
+    updateDeficitDisplay();
     return;
   }
 
@@ -139,6 +149,37 @@ function renderDay() {
     ]);
     list.appendChild(item);
   }
+  updateDeficitDisplay();
+}
+
+function updateDeficitDisplay() {
+  const profile = getProfile();
+  const maintenance = profile.maintenanceCalories;
+  const barFill = $('#deficit-bar-fill');
+  const deficitText = $('#deficit-text');
+
+  if (!maintenance) {
+    barFill.style.width = '0%';
+    deficitText.textContent = '';
+    deficitText.innerHTML = '<span class="deficit-hint">Configurer profil</span>';
+    const hint = deficitText.querySelector('.deficit-hint');
+    if (hint) hint.addEventListener('click', () => openProfileModal(() => updateDeficitDisplay()));
+    return;
+  }
+
+  const consumed = currentDay ? Math.round(currentDay.totals.kcal) : 0;
+  const pct = Math.round((consumed / maintenance) * 100);
+
+  barFill.style.width = `${Math.min(pct, 100)}%`;
+  barFill.className = 'deficit-bar-fill';
+  if (pct > 100) {
+    barFill.classList.add('over');
+    barFill.style.width = '100%';
+  } else if (pct > 75) {
+    barFill.classList.add('warning');
+  }
+
+  deficitText.textContent = `${consumed} / ${maintenance} kcal`;
 }
 
 function editTempEntry(entry) {

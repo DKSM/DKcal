@@ -122,6 +122,13 @@ body::before {
   z-index: 50;
 }
 
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-md);
+  flex-shrink: 0;
+}
+
 .navbar-brand {
   display: flex;
   align-items: center;
@@ -252,6 +259,74 @@ body::before {
 .nav-btn-logout:hover {
   border-color: var(--danger);
   color: var(--danger);
+}
+
+.nav-btn-round {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.nav-btn-round:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* === DEFICIT DISPLAY === */
+.deficit-display {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  padding: 6px 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.deficit-bar-wrap {
+  width: 160px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 3px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.deficit-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--success);
+  transition: width 0.4s ease, background 0.4s ease;
+  width: 0%;
+}
+
+.deficit-bar-fill.warning {
+  background: var(--accent);
+}
+
+.deficit-bar-fill.over {
+  background: var(--danger);
+}
+
+.deficit-text {
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.deficit-hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.deficit-hint:hover {
+  color: var(--accent);
 }
 
 /* ========================================
@@ -633,13 +708,30 @@ body::before {
     gap: var(--sp-sm);
   }
 
+  .navbar-left {
+    gap: var(--sp-xs);
+  }
+
   .navbar-brand h1 {
     display: none;
   }
 
   .date-nav .date-label {
-    min-width: 100px;
-    font-size: 0.82rem;
+    min-width: 80px;
+    font-size: 0.78rem;
+  }
+
+  .deficit-display {
+    padding: 4px 8px;
+    gap: 4px;
+  }
+
+  .deficit-bar-wrap {
+    width: 60px;
+  }
+
+  .deficit-text {
+    font-size: 0.68rem;
   }
 
   .navbar-actions {

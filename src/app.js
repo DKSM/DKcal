@@ -9,6 +9,7 @@ const authRoutes = require('./routes/auth');
 const itemsRoutes = require('./routes/items');
 const dayRoutes = require('./routes/day');
 const statsRoutes = require('./routes/stats');
+const profileRoutes = require('./routes/profile');
 const { estimateNutrition } = require('./services/estimator');
 
 const app = express();
@@ -49,6 +50,7 @@ app.use('/api', requireAuth);
 app.use('/api', itemsRoutes);
 app.use('/api', dayRoutes);
 app.use('/api', statsRoutes);
+app.use('/api', profileRoutes);
 
 // AI nutrition estimate
 app.get('/api/estimate', async (req, res, next) => {
