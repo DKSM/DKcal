@@ -15,7 +15,7 @@ router.get('/stats', async (req, res, next) => {
       from = d.toISOString().slice(0, 10);
     }
 
-    const stats = await computeStats('default', from, to);
+    const stats = await computeStats(req.session.userId, from, to);
     res.json(stats);
   } catch (err) {
     next(err);

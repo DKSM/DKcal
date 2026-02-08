@@ -20,10 +20,12 @@ export function initAuth(onSuccess) {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     errorEl.textContent = '';
-    const password = form.querySelector('input').value;
+    const inputs = form.querySelectorAll('input');
+    const username = inputs[0].value;
+    const password = inputs[1].value;
 
     try {
-      await api.post('/api/login', { password });
+      await api.post('/api/login', { username, password });
       screen.style.display = 'none';
       onSuccess();
     } catch (err) {

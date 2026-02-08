@@ -6,12 +6,12 @@ const { calculateItem, computeItemNutrition } = require('../services/itemCalc');
 const router = express.Router();
 
 // Recalculate all day entries that use any of the given item IDs
-async function recalcDays(itemIds, itemsMap) {
-  const dates = await storage.listDayDates('default');
+async function recalcDays(userId, itemIds, itemsMap) {
+  const dates = await storage.listDayDates(userId);
   const idSet = new Set(itemIds);
 
   for (const dateStr of dates) {
-    const day = await storage.readDay('default', dateStr);
+    const day = await storage.readDay(userId, dateStr);
     let changed = false;
 
     for (const entry of day.entries) {
@@ -37,7 +37,7 @@ async function recalcDays(itemIds, itemsMap) {
         fat: Math.round(day.entries.reduce((s, e) => s + (e.fat || 0), 0) * 100) / 100,
         carbs: Math.round(day.entries.reduce((s, e) => s + (e.carbs || 0), 0) * 100) / 100,
       };
-      await storage.writeDay('default', dateStr, day);
+      await storage.writeDay(userId, dateStr, day);
     }
   }
 }
@@ -64,7 +64,8 @@ function findAffectedItemIds(changedId, items) {
 // GET /api/items
 router.get('/items', async (req, res, next) => {
   try {
-    const items = await storage.readItems();
+    const userId = req.session.userId;
+    const items = await storage.readItems(userId);
     const itemsMap = new Map(items.map(i => [i.id, i]));
 
     const search = (req.query.search || '').toLowerCase().trim();
@@ -87,12 +88,13 @@ router.get('/items', async (req, res, next) => {
 // POST /api/items
 router.post('/items', async (req, res, next) => {
   try {
+    const userId = req.session.userId;
     const errors = validateItem(req.body);
     if (errors.length > 0) {
       return res.status(400).json({ error: errors.join(', ') });
     }
 
-    const items = await storage.readItems();
+    const items = await storage.readItems(userId);
 
     // Check for duplicate name
     const trimmedName = req.body.name.trim().toLowerCase();
@@ -126,7 +128,7 @@ router.post('/items', async (req, res, next) => {
     }
 
     items.push(item);
-    await storage.writeItems('default', items);
+    await storage.writeItems(userId, items);
 
     const itemsMap = new Map(items.map(i => [i.id, i]));
     res.status(201).json({ ...item, computed: computeItemNutrition(item, itemsMap) });
@@ -138,7 +140,8 @@ router.post('/items', async (req, res, next) => {
 // PUT /api/items/:id
 router.put('/items/:id', async (req, res, next) => {
   try {
-    const items = await storage.readItems();
+    const userId = req.session.userId;
+    const items = await storage.readItems(userId);
     const idx = items.findIndex(i => i.id === req.params.id);
     if (idx === -1) {
       return res.status(404).json({ error: 'Item not found' });
@@ -190,12 +193,12 @@ router.put('/items/:id', async (req, res, next) => {
     }
 
     items[idx] = item;
-    await storage.writeItems('default', items);
+    await storage.writeItems(userId, items);
 
     // Recalculate all historical entries affected by this item change
     const itemsMap = new Map(items.map(i => [i.id, i]));
     const affectedIds = findAffectedItemIds(item.id, items);
-    await recalcDays(affectedIds, itemsMap);
+    await recalcDays(userId, affectedIds, itemsMap);
 
     res.json({ ...item, computed: computeItemNutrition(item, itemsMap) });
   } catch (err) {
@@ -206,14 +209,15 @@ router.put('/items/:id', async (req, res, next) => {
 // DELETE /api/items/:id
 router.delete('/items/:id', async (req, res, next) => {
   try {
-    const items = await storage.readItems();
+    const userId = req.session.userId;
+    const items = await storage.readItems(userId);
     const idx = items.findIndex(i => i.id === req.params.id);
     if (idx === -1) {
       return res.status(404).json({ error: 'Item not found' });
     }
 
     items.splice(idx, 1);
-    await storage.writeItems('default', items);
+    await storage.writeItems(userId, items);
     res.json({ ok: true });
   } catch (err) {
     next(err);

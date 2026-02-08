@@ -67,12 +67,13 @@ app.get('/api/estimate', async (req, res, next) => {
 app.get('/api/suggestions', async (req, res, next) => {
   try {
     const storage = require('./services/storage');
-    const items = await storage.readItems();
-    const dates = await storage.listDayDates();
+    const userId = req.session.userId;
+    const items = await storage.readItems(userId);
+    const dates = await storage.listDayDates(userId);
 
     const freq = {};
     for (const dateStr of dates) {
-      const day = await storage.readDay('default', dateStr);
+      const day = await storage.readDay(userId, dateStr);
       for (const entry of day.entries) {
         freq[entry.itemId] = (freq[entry.itemId] || 0) + 1;
       }

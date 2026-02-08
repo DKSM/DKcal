@@ -13,10 +13,11 @@ router.get('/day/:date', async (req, res, next) => {
     if (!DATE_RE.test(req.params.date)) {
       return res.status(400).json({ error: 'Invalid date format, use YYYY-MM-DD' });
     }
-    const day = await storage.readDay('default', req.params.date);
+    const userId = req.session.userId;
+    const day = await storage.readDay(userId, req.params.date);
 
     // Enrich entries with item names
-    const items = await storage.readItems();
+    const items = await storage.readItems(userId);
     const itemsMap = new Map(items.map(i => [i.id, i]));
     day.entries = day.entries.map(e => ({
       ...e,
@@ -36,8 +37,9 @@ router.put('/day/:date', async (req, res, next) => {
       return res.status(400).json({ error: 'Invalid date format, use YYYY-MM-DD' });
     }
 
+    const userId = req.session.userId;
     const dateStr = req.params.date;
-    const existing = await storage.readDay('default', dateStr);
+    const existing = await storage.readDay(userId, dateStr);
 
     // Update weight if provided
     if (req.body.weight !== undefined) {
@@ -50,7 +52,7 @@ router.put('/day/:date', async (req, res, next) => {
       if (!e.itemId || typeof e.qty !== 'number' || !['g', 'ml', 'unit'].includes(e.unitType)) {
         return res.status(400).json({ error: 'addEntry requires itemId, qty, unitType' });
       }
-      const nutrition = await computeEntryNutrition('default', e.itemId, e.qty, e.unitType);
+      const nutrition = await computeEntryNutrition(userId, e.itemId, e.qty, e.unitType);
       existing.entries.push({
         id: uuidv4(),
         itemId: e.itemId,
@@ -72,7 +74,7 @@ router.put('/day/:date', async (req, res, next) => {
       }
       const recomputed = [];
       for (const e of req.body.entries) {
-        const nutrition = await computeEntryNutrition('default', e.itemId, e.qty, e.unitType);
+        const nutrition = await computeEntryNutrition(userId, e.itemId, e.qty, e.unitType);
         recomputed.push({
           id: e.id || uuidv4(),
           itemId: e.itemId,
@@ -102,10 +104,10 @@ router.put('/day/:date', async (req, res, next) => {
     };
     existing.date = dateStr;
 
-    await storage.writeDay('default', dateStr, existing);
+    await storage.writeDay(userId, dateStr, existing);
 
     // Enrich with item names for response
-    const items = await storage.readItems();
+    const items = await storage.readItems(userId);
     const itemsMap = new Map(items.map(i => [i.id, i]));
     existing.entries = existing.entries.map(e => ({
       ...e,

@@ -72,6 +72,19 @@ async function writeProfile(userId = 'default', profile) {
   return writeJSON(profilePath(userId), profile);
 }
 
+// Accounts
+function accountsPath() {
+  return path.join(__dirname, '..', '..', 'data', 'accounts.json');
+}
+
+async function readAccounts() {
+  return readJSON(accountsPath(), []);
+}
+
+async function writeAccounts(accounts) {
+  return writeJSON(accountsPath(), accounts);
+}
+
 // List day files
 async function listDayDates(userId = 'default') {
   const daysDir = path.join(getUserDir(userId), 'days');
@@ -98,4 +111,6 @@ module.exports = {
   readProfile,
   writeProfile,
   listDayDates,
+  readAccounts,
+  writeAccounts,
 };
