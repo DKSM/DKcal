@@ -541,9 +541,10 @@ body::before {
 .entry-macros .macro-l { color: var(--warning); min-width: 120px; }
 .entry-macros .macro-g { color: var(--success); }
 
+.entry-edit,
 .entry-delete {
   color: var(--text-muted);
-  margin-left: var(--sp-md);
+  margin-left: var(--sp-xs);
   font-size: 0.9rem;
   padding: 6px;
   border-radius: var(--radius-sm);
@@ -551,8 +552,14 @@ body::before {
   transition: all var(--transition-fast);
 }
 
+.entry-item:hover .entry-edit,
 .entry-item:hover .entry-delete {
   opacity: 1;
+}
+
+.entry-edit:hover {
+  color: var(--accent);
+  background: rgba(255, 140, 50, 0.1);
 }
 
 .entry-delete:hover {
@@ -710,9 +717,10 @@ body::before {
     margin-left: var(--sp-sm);
   }
 
+  .entry-edit,
   .entry-delete {
     opacity: 1;
-    margin-left: var(--sp-sm);
+    margin-left: var(--sp-xs);
   }
 
   #consumption-list {

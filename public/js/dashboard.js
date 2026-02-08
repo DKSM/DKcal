@@ -1,7 +1,7 @@
 import { $, createElement, formatDate, todayStr, addDays, showToast } from './utils.js';
 import { api } from './api.js';
 import { openAddConsumption } from './consumption.js';
-import { openItemsModal } from './items.js';
+import { openItemsModal, openItemForm } from './items.js';
 import { openStatsModal } from './stats.js';
 import { logout } from './auth.js';
 
@@ -127,12 +127,28 @@ function renderDay() {
         createElement('span', { className: 'entry-macros' }, macroSpans),
       ]),
       createElement('button', {
+        className: 'entry-edit',
+        innerHTML: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>',
+        onClick: () => editItem(entry.itemId),
+      }),
+      createElement('button', {
         className: 'entry-delete',
         innerHTML: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>',
         onClick: () => removeEntry(entry.id),
       }),
     ]);
     list.appendChild(item);
+  }
+}
+
+async function editItem(itemId) {
+  try {
+    const items = await api.get('/api/items');
+    const item = items.find(i => i.id === itemId);
+    if (!item) { showToast('Aliment introuvable', true); return; }
+    openItemForm(item, () => loadDay(currentDate));
+  } catch (err) {
+    showToast(err.message, true);
   }
 }
 
