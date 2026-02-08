@@ -581,3 +581,58 @@ select.input {
     transform: translateX(0) translateY(0);
   }
 }
+
+/* ========================================
+   RESPONSIVE SMALL PHONE (max-width: 480px)
+   ======================================== */
+@media (max-width: 480px) {
+
+  .period-btn {
+    padding: 6px 8px;
+    font-size: 0.7rem;
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+  }
+
+  .component-row .input[type="number"],
+  .component-row select.input {
+    width: 56px;
+    flex: none;
+    font-size: 0.8rem;
+    padding: 8px 6px;
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: var(--sp-sm);
+  }
+
+  .tab {
+    padding: 7px 4px;
+    font-size: 0.68rem;
+  }
+
+  .stats-summary {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--sp-xs);
+  }
+
+  .hint-popup {
+    width: 95%;
+    padding: var(--sp-md);
+  }
+
+  .hint-popup h3 {
+    font-size: 0.9rem;
+  }
+
+  .hint-popup p,
+  .hint-popup ul li {
+    font-size: 0.78rem;
+  }
+
+  .hint-popup .hint-example {
+    font-size: 0.75rem;
+  }
+}

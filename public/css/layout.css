@@ -624,6 +624,7 @@ body::before {
 .entry-macros .macro-p { color: var(--protein-color); min-width: 140px; }
 .entry-macros .macro-l { color: var(--warning); min-width: 120px; }
 .entry-macros .macro-g { color: var(--success); }
+.entry-macros .macro-label-short { display: none; }
 
 .entry-edit,
 .entry-delete {
@@ -816,6 +817,7 @@ body::before {
     gap: 2px;
     align-items: flex-end;
     margin-left: var(--sp-sm);
+    width: auto;
   }
 
   .entry-edit,
@@ -832,5 +834,184 @@ body::before {
   .footer-bar {
     gap: var(--sp-md);
     font-size: 0.7rem;
+  }
+}
+
+/* ========================================
+   RESPONSIVE SMALL PHONE (max-width: 480px)
+   ======================================== */
+@media (max-width: 480px) {
+
+  /* --- NAVBAR --- */
+  .navbar {
+    padding: 0 var(--sp-xs);
+    gap: var(--sp-xs);
+    height: 48px;
+  }
+
+  .navbar-center {
+    display: none;
+  }
+
+  .navbar-left {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .navbar-brand .logo-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .date-nav {
+    padding: 2px;
+    gap: 2px;
+  }
+
+  .date-nav button {
+    width: 26px;
+    height: 26px;
+  }
+
+  .date-nav .date-label {
+    min-width: 60px;
+    font-size: 0.72rem;
+    padding: 0 2px;
+  }
+
+  .navbar-actions {
+    gap: 3px;
+  }
+
+  .nav-btn {
+    padding: 5px 7px;
+  }
+
+  .nav-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .nav-btn-round,
+  .nav-btn-logout {
+    width: 30px;
+    height: 30px;
+  }
+
+  /* --- MAIN CONTENT --- */
+  .main-content {
+    padding: var(--sp-sm) var(--sp-xs);
+  }
+
+  /* --- SUMMARY CARDS: stack vertically --- */
+  .summary-row {
+    grid-template-columns: 1fr;
+    gap: var(--sp-sm);
+  }
+
+  .summary-card {
+    padding: var(--sp-sm) var(--sp-md);
+  }
+
+  .summary-card .card-icon {
+    width: 32px;
+    height: 32px;
+    margin-bottom: var(--sp-xs);
+  }
+
+  .summary-card .card-value {
+    font-size: 1.5rem;
+  }
+
+  .card-macros .macros-row {
+    gap: var(--sp-lg);
+  }
+
+  .card-macros .macro-value {
+    font-size: 1.5rem;
+  }
+
+  .card-weight .weight-input-wrap input {
+    font-size: 1.5rem;
+    width: 90px;
+  }
+
+  /* --- ENTRY ITEMS --- */
+  .entry-item {
+    flex-wrap: wrap;
+    padding: var(--sp-sm);
+    gap: 2px;
+  }
+
+  .entry-time {
+    min-width: 40px;
+    font-size: 0.7rem;
+  }
+
+  .entry-info {
+    margin-left: var(--sp-sm);
+  }
+
+  .entry-name {
+    font-size: 0.82rem;
+  }
+
+  .entry-nutrition {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-left: 0;
+    margin-top: 4px;
+    gap: var(--sp-sm);
+    padding-left: 48px;
+  }
+
+  .entry-kcal {
+    min-width: auto;
+    font-size: 0.8rem;
+  }
+
+  .entry-macros {
+    gap: var(--sp-sm);
+  }
+
+  .entry-macros span {
+    min-width: 0 !important;
+    font-size: 0.7rem;
+  }
+
+  .entry-macros .macro-label-full {
+    display: none;
+  }
+
+  .entry-macros .macro-label-short {
+    display: inline;
+  }
+
+  .entry-edit,
+  .entry-delete {
+    opacity: 1;
+    padding: 8px;
+  }
+
+  /* --- CONSUMPTION LIST --- */
+  #consumption-list {
+    max-height: calc(100vh - 48px - 180px);
+  }
+
+  .panel-header {
+    padding: var(--sp-sm) var(--sp-md);
+  }
+
+  .panel-header h2 {
+    font-size: 0.85rem;
+  }
+
+  /* --- FOOTER --- */
+  .footer-bar {
+    gap: var(--sp-sm);
+    padding: var(--sp-xs) var(--sp-sm);
+    font-size: 0.65rem;
   }
 }

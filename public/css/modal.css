@@ -131,3 +131,20 @@
     padding: var(--sp-sm) var(--sp-md);
   }
 }
+
+/* ========================================
+   RESPONSIVE SMALL PHONE (max-width: 480px)
+   ======================================== */
+@media (max-width: 480px) {
+  .modal-header h2 {
+    font-size: 0.9rem;
+  }
+
+  .modal-body {
+    padding: var(--sp-sm);
+  }
+
+  .modal-footer {
+    padding: var(--sp-xs) var(--sp-sm);
+  }
+}

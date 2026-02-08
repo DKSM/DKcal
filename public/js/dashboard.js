@@ -121,9 +121,9 @@ function renderDay() {
 
   for (const entry of currentDay.entries) {
     const macroSpans = [
-      createElement('span', { className: 'macro-p', innerHTML: `Protéines : ${entry.protein ?? 0}g` }),
-      createElement('span', { className: 'macro-l', innerHTML: `Lipides : ${entry.fat ?? 0}g` }),
-      createElement('span', { className: 'macro-g', innerHTML: `Glucides : ${entry.carbs ?? 0}g` }),
+      createElement('span', { className: 'macro-p', innerHTML: `<span class="macro-label-full">Protéines : </span><span class="macro-label-short">P:</span>${entry.protein ?? 0}g` }),
+      createElement('span', { className: 'macro-l', innerHTML: `<span class="macro-label-full">Lipides : </span><span class="macro-label-short">L:</span>${entry.fat ?? 0}g` }),
+      createElement('span', { className: 'macro-g', innerHTML: `<span class="macro-label-full">Glucides : </span><span class="macro-label-short">G:</span>${entry.carbs ?? 0}g` }),
     ];
 
     const item = createElement('div', { className: 'entry-item' }, [
