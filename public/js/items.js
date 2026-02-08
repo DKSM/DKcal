@@ -68,6 +68,53 @@ export function openItemsModal(onDone) {
   });
 }
 
+function showHintPopup() {
+  const overlay = createElement('div', { className: 'hint-popup-overlay' });
+  const popup = createElement('div', { className: 'hint-popup' });
+
+  popup.innerHTML = `
+    <h3>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 014 12.7V17a1 1 0 01-1 1H9a1 1 0 01-1-1v-2.3A7 7 0 0112 2z"/></svg>
+      Optimiser l'estimation IA
+    </h3>
+    <p>Le champ <strong>Nom</strong> est envoy\u00e9 \u00e0 l'IA pour estimer les valeurs nutritionnelles. Plus votre description est pr\u00e9cise, meilleure sera l'estimation.</p>
+    <p><strong>Vous pouvez pr\u00e9ciser :</strong></p>
+    <ul>
+      <li>La <strong>marque</strong> du produit (Danone, Kinder, Barilla...)</li>
+      <li>Les <strong>quantit\u00e9s</strong> exactes (200g, 1 cuill\u00e8re \u00e0 soupe...)</li>
+      <li>Le mode de <strong>pr\u00e9paration</strong> (cru, cuit, grill\u00e9, frit, vapeur...)</li>
+      <li>Une <strong>recette enti\u00e8re</strong> avec tous ses ingr\u00e9dients</li>
+    </ul>
+    <p><strong>Exemple simple :</strong></p>
+    <div class="hint-example">caf\u00e9 au lait (50ml lait demi-\u00e9cr\u00e9m\u00e9, 2 sucres)</div>
+    <p><strong>Exemple avanc\u00e9 :</strong></p>
+    <div class="hint-example">lasagnes maison : 3 feuilles de p\u00e2te, 150g bolognaise (boeuf hach\u00e9 5%, oignon, coulis de tomate), 80g b\u00e9chamel (beurre, farine, lait entier), 30g gruy\u00e8re r\u00e2p\u00e9</div>
+    <p>Il n'y a aucune limite de d\u00e9tail. Vous pouvez d\u00e9crire un plat entier avec chaque ingr\u00e9dient et sa quantit\u00e9.</p>
+    <p>Une fois les valeurs estim\u00e9es et appliqu\u00e9es, <strong>renommez l'aliment</strong> avec un nom court et propre (ex: \u00ab\u00a0Lasagnes maison\u00a0\u00bb).</p>
+    <p class="hint-note">L'estimation reste une approximation bas\u00e9e sur des moyennes nutritionnelles. Elle ne remplace pas l'\u00e9tiquette d'un produit, mais donne un ordre de grandeur fiable pour le suivi au quotidien.</p>
+  `;
+
+  const closeBtn = createElement('button', {
+    className: 'hint-close',
+    textContent: 'Compris',
+    onClick: () => {
+      overlay.classList.remove('active');
+      setTimeout(() => overlay.remove(), 200);
+    },
+  });
+  popup.appendChild(closeBtn);
+  overlay.appendChild(popup);
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add('active'));
+
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      overlay.classList.remove('active');
+      setTimeout(() => overlay.remove(), 200);
+    }
+  });
+}
+
 export function openItemForm(existingItem, onSaved) {
   const isEdit = !!existingItem?.id;
   const title = isEdit ? 'Modifier l\'aliment' : 'Nouvel aliment';
@@ -83,12 +130,22 @@ export function openItemForm(existingItem, onSaved) {
     // Name
     const nameGroup = createElement('div', { className: 'form-group' });
     nameGroup.appendChild(createElement('label', { textContent: 'Nom' }));
+    const nameWrap = createElement('div', { className: 'name-input-wrap' });
     const nameInput = createElement('input', {
       className: 'input',
       value: existingItem?.name || '',
       placeholder: 'Nom de l\'aliment',
     });
-    nameGroup.appendChild(nameInput);
+    const hintBulb = createElement('button', {
+      type: 'button',
+      className: 'hint-bulb',
+      title: 'Astuce IA',
+      innerHTML: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 014 12.7V17a1 1 0 01-1 1H9a1 1 0 01-1-1v-2.3A7 7 0 0112 2z"/></svg>',
+      onClick: () => showHintPopup(),
+    });
+    nameWrap.appendChild(nameInput);
+    nameWrap.appendChild(hintBulb);
+    nameGroup.appendChild(nameWrap);
     body.appendChild(nameGroup);
 
     // Mode tabs
