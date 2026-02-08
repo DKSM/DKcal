@@ -167,14 +167,11 @@ export function openProfileModal(onSaved) {
 
     function autoFillBMR() {
       const bmr = calculateBMR(selectedSex, parseInt(ageInput.value), parseFloat(weightInput.value));
-      if (bmr && !bmrInput._manuallyEdited) {
+      if (bmr) {
         bmrInput.value = bmr;
       }
       updateMaintenance();
     }
-
-    // Track manual BMR edits
-    bmrInput.addEventListener('focus', () => { bmrInput._manuallyEdited = true; });
 
     function updateMaintenance() {
       const bmr = parseInt(bmrInput.value) || 0;
