@@ -63,37 +63,24 @@ app.get('/api/estimate', async (req, res, next) => {
   }
 });
 
-// Suggestions (items used in last 14 days)
+// Suggestions (all items sorted by all-time frequency)
 app.get('/api/suggestions', async (req, res, next) => {
   try {
     const storage = require('./services/storage');
     const items = await storage.readItems();
-    const itemsMap = new Map(items.map(i => [i.id, i]));
     const dates = await storage.listDayDates();
 
-    const today = new Date();
-    const twoWeeksAgo = new Date(today);
-    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-    const cutoff = twoWeeksAgo.toISOString().slice(0, 10);
-
-    const recentDates = dates.filter(d => d >= cutoff);
     const freq = {};
-
-    for (const dateStr of recentDates) {
+    for (const dateStr of dates) {
       const day = await storage.readDay('default', dateStr);
       for (const entry of day.entries) {
         freq[entry.itemId] = (freq[entry.itemId] || 0) + 1;
       }
     }
 
-    const suggestions = Object.entries(freq)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 20)
-      .map(([itemId, count]) => {
-        const item = itemsMap.get(itemId);
-        return item ? { ...item, frequency: count } : null;
-      })
-      .filter(Boolean);
+    const suggestions = items
+      .map(item => ({ ...item, frequency: freq[item.id] || 0 }))
+      .sort((a, b) => b.frequency - a.frequency);
 
     res.json(suggestions);
   } catch (err) {

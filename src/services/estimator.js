@@ -3,7 +3,7 @@ const config = require('../config');
 const UNIT_PROMPTS = {
   '100g': 'pour 100g de',
   '100ml': 'pour 100ml de',
-  'portion': 'pour une portion standard de',
+  'portion': 'pour',
 };
 
 async function estimateNutrition(description, unit = '100g') {

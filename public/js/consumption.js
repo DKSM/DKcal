@@ -22,9 +22,9 @@ export function openAddConsumption(dateStr, onDone) {
     searchGroup.appendChild(resultsDiv);
     body.appendChild(searchGroup);
 
-    // Suggestions
+    // All items list
     const suggestionsDiv = createElement('div', { className: 'form-group' });
-    const suggestionsLabel = createElement('label', { textContent: 'Suggestions (14 derniers jours)' });
+    const suggestionsLabel = createElement('label', { textContent: 'Tous les aliments' });
     const suggestionsList = createElement('div', { className: 'search-results' });
     suggestionsDiv.appendChild(suggestionsLabel);
     suggestionsDiv.appendChild(suggestionsList);
@@ -160,19 +160,12 @@ export function openAddConsumption(dateStr, onDone) {
 
     searchInput.addEventListener('input', () => doSearch(searchInput.value.trim()));
 
-    // Load suggestions
+    // Load all items sorted by popularity
     (async () => {
       try {
         suggestions = await api.get('/api/suggestions');
         if (suggestions.length > 0) {
-          // Enrich with computed values, keep frequency
-          const allItems = await api.get('/api/items');
-          const itemsMap = new Map(allItems.map(i => [i.id, i]));
-          const enriched = suggestions.map(s => {
-            const full = itemsMap.get(s.id);
-            return full ? { ...full, frequency: s.frequency } : s;
-          });
-          renderResults(enriched, suggestionsList);
+          renderResults(suggestions, suggestionsList);
         } else {
           suggestionsDiv.style.display = 'none';
         }
