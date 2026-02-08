@@ -318,6 +318,15 @@ body::before {
   white-space: nowrap;
 }
 
+.deficit-remaining {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.deficit-remaining.over {
+  color: var(--danger);
+}
+
 .deficit-hint {
   font-size: 0.78rem;
   color: var(--text-muted);

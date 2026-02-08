@@ -179,7 +179,10 @@ function updateDeficitDisplay() {
     barFill.classList.add('warning');
   }
 
-  deficitText.textContent = `${consumed} / ${maintenance} kcal`;
+  const diff = consumed - maintenance;
+  const sign = diff > 0 ? '+' : '\u2212';
+  const diffClass = diff > 0 ? 'deficit-remaining over' : 'deficit-remaining';
+  deficitText.innerHTML = `${consumed} / ${maintenance} kcal <span class="${diffClass}">(${sign}${Math.abs(diff)})</span>`;
 }
 
 function editTempEntry(entry) {
