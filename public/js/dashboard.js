@@ -73,7 +73,7 @@ export async function loadDay(dateStr) {
   try {
     currentDay = await api.get(`/api/day/${dateStr}`);
   } catch {
-    currentDay = { date: dateStr, weight: null, entries: [], totals: { kcal: 0, protein: 0 } };
+    currentDay = { date: dateStr, weight: null, entries: [], totals: { kcal: 0, protein: 0, fat: 0, carbs: 0 } };
   }
   renderDay();
 }
@@ -84,7 +84,9 @@ function renderDay() {
 
   // Totals
   $('#total-kcal').textContent = Math.round(currentDay.totals.kcal).toLocaleString();
-  $('#total-protein').textContent = Math.round(currentDay.totals.protein * 10) / 10;
+  $('#total-protein').textContent = Math.round(currentDay.totals.protein);
+  $('#total-fat').textContent = Math.round(currentDay.totals.fat || 0);
+  $('#total-carbs').textContent = Math.round(currentDay.totals.carbs || 0);
 
   // Weight
   const weightInput = $('#weight-input');
@@ -108,7 +110,11 @@ function renderDay() {
   }
 
   for (const entry of currentDay.entries) {
-    const proteinStr = entry.protein ? `${Math.round(entry.protein * 10) / 10}g prot` : '';
+    const macroSpans = [
+      createElement('span', { className: 'macro-p', innerHTML: `Protéines : ${entry.protein ?? 0}g` }),
+      createElement('span', { className: 'macro-l', innerHTML: `Lipides : ${entry.fat ?? 0}g` }),
+      createElement('span', { className: 'macro-g', innerHTML: `Glucides : ${entry.carbs ?? 0}g` }),
+    ];
 
     const item = createElement('div', { className: 'entry-item' }, [
       createElement('span', { className: 'entry-time', textContent: entry.time || '' }),
@@ -118,7 +124,7 @@ function renderDay() {
       ]),
       createElement('div', { className: 'entry-nutrition' }, [
         createElement('span', { className: 'entry-kcal', textContent: `${Math.round(entry.kcal)} kcal` }),
-        createElement('span', { className: 'entry-protein', textContent: proteinStr }),
+        createElement('span', { className: 'entry-macros' }, macroSpans),
       ]),
       createElement('button', {
         className: 'entry-delete',

@@ -59,6 +59,8 @@ router.put('/day/:date', async (req, res, next) => {
         time: e.time || new Date().toTimeString().slice(0, 5),
         kcal: nutrition.kcal || 0,
         protein: nutrition.protein || 0,
+        fat: nutrition.fat || 0,
+        carbs: nutrition.carbs || 0,
       });
     }
 
@@ -79,6 +81,8 @@ router.put('/day/:date', async (req, res, next) => {
           time: e.time || '',
           kcal: nutrition.kcal || 0,
           protein: nutrition.protein || 0,
+          fat: nutrition.fat || 0,
+          carbs: nutrition.carbs || 0,
         });
       }
       existing.entries = recomputed;
@@ -93,6 +97,8 @@ router.put('/day/:date', async (req, res, next) => {
     existing.totals = {
       kcal: Math.round(existing.entries.reduce((s, e) => s + (e.kcal || 0), 0) * 100) / 100,
       protein: Math.round(existing.entries.reduce((s, e) => s + (e.protein || 0), 0) * 100) / 100,
+      fat: Math.round(existing.entries.reduce((s, e) => s + (e.fat || 0), 0) * 100) / 100,
+      carbs: Math.round(existing.entries.reduce((s, e) => s + (e.carbs || 0), 0) * 100) / 100,
     };
     existing.date = dateStr;
 

@@ -13,7 +13,7 @@ async function estimateNutrition(description, unit = '100g') {
 
   const unitLabel = UNIT_PROMPTS[unit] || UNIT_PROMPTS['100g'];
 
-  const prompt = `${unitLabel} "${description}", donne kcal et protéines. Réponds UNIQUEMENT : {"kcal":nombre,"protein":nombre}`;
+  const prompt = `${unitLabel} "${description}", donne kcal, protéines, lipides et glucides. Réponds UNIQUEMENT : {"kcal":nombre,"protein":nombre,"fat":nombre,"carbs":nombre}`;
 
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -24,7 +24,7 @@ async function estimateNutrition(description, unit = '100g') {
     body: JSON.stringify({
       model: 'compound-beta',
       messages: [
-        { role: 'system', content: 'Tu es un nutritionniste. Si c\'est un produit de marque, recherche les valeurs exactes sur le site du fabricant ou une base nutritionnelle. Réponds UNIQUEMENT avec {"kcal":X,"protein":X} — rien d\'autre, pas d\'autres champs.' },
+        { role: 'system', content: 'Tu es un nutritionniste. Si c\'est un produit de marque, recherche les valeurs exactes sur le site du fabricant ou une base nutritionnelle. Réponds UNIQUEMENT avec {"kcal":X,"protein":X,"fat":X,"carbs":X} — rien d\'autre.' },
         { role: 'user', content: prompt },
       ],
       temperature: 0.1,
@@ -43,9 +43,11 @@ async function estimateNutrition(description, unit = '100g') {
     throw Object.assign(new Error('Réponse vide de l\'IA'), { status: 502 });
   }
 
-  // Extract kcal and protein with individual regex (resilient to truncated JSON)
+  // Extract values with individual regex (resilient to truncated JSON)
   const kcalMatch = content.match(/"kcal"\s*:\s*([\d.]+)/);
   const protMatch = content.match(/"protein"\s*:\s*([\d.]+)/);
+  const fatMatch = content.match(/"fat"\s*:\s*([\d.]+)/);
+  const carbsMatch = content.match(/"carbs"\s*:\s*([\d.]+)/);
 
   if (!kcalMatch) {
     throw Object.assign(new Error('Réponse IA invalide'), { status: 502 });
@@ -54,6 +56,8 @@ async function estimateNutrition(description, unit = '100g') {
   return {
     kcal: Math.round(parseFloat(kcalMatch[1])),
     protein: protMatch ? Math.round(parseFloat(protMatch[1]) * 10) / 10 : 0,
+    fat: fatMatch ? Math.round(parseFloat(fatMatch[1]) * 10) / 10 : 0,
+    carbs: carbsMatch ? Math.round(parseFloat(carbsMatch[1]) * 10) / 10 : 0,
   };
 }
 

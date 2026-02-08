@@ -296,38 +296,38 @@ select.input {
    ======================================== */
 .stats-summary {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: var(--sp-sm);
+  grid-template-columns: repeat(8, 1fr);
+  gap: var(--sp-xs);
   margin-top: var(--sp-lg);
 }
 
 @media (max-width: 900px) {
   .stats-summary {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 
 .stats-summary .summary-card {
   background: var(--bg-primary);
   border: 1px solid var(--border-subtle);
-  padding: var(--sp-md);
+  padding: var(--sp-sm) var(--sp-xs);
   border-radius: var(--radius-md);
   text-align: center;
 }
 
 .stats-summary .summary-card .summary-value {
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: 700;
   font-family: var(--font-mono);
   color: var(--accent-bright);
 }
 
 .stats-summary .summary-card .summary-label {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.8px;
-  margin-top: 4px;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
 }
 
 /* ========================================

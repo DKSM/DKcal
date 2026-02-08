@@ -312,8 +312,8 @@ body::before {
   background: var(--accent-gradient);
 }
 
-.summary-card.card-protein::before {
-  background: linear-gradient(90deg, #4facfe, #00f2fe);
+.summary-card.card-macros::before {
+  background: linear-gradient(90deg, #4facfe, #ffc048, #2ed573);
 }
 
 .summary-card.card-weight::before {
@@ -335,10 +335,38 @@ body::before {
   color: var(--accent);
 }
 
-.card-protein .card-icon {
+.card-macros .card-icon {
   background: rgba(79, 172, 254, 0.12);
   color: var(--protein-color);
 }
+
+.card-macros .macros-row {
+  display: flex;
+  gap: var(--sp-md);
+}
+
+.card-macros .macro-item {
+  flex: 1;
+}
+
+.card-macros .macro-value {
+  font-size: 2rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.card-macros .macro-unit {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-left: 2px;
+}
+
+.macro-protein .macro-value { color: var(--protein-color); }
+.macro-fat .macro-value { color: var(--warning); }
+.macro-carbs .macro-value { color: var(--success); }
 
 .card-weight .card-icon {
   background: rgba(67, 233, 123, 0.12);
@@ -354,7 +382,6 @@ body::before {
 }
 
 .card-kcal .card-value { color: var(--accent-bright); }
-.card-protein .card-value { color: var(--protein-color); }
 .card-weight .card-value { color: var(--weight-color); }
 
 .summary-card .card-label {
@@ -485,8 +512,9 @@ body::before {
 .entry-nutrition {
   display: flex;
   gap: var(--sp-lg);
-  flex-shrink: 0;
+  flex: none;
   margin-left: var(--sp-md);
+  width: 460px;
 }
 
 .entry-kcal {
@@ -494,13 +522,24 @@ body::before {
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--accent);
+  min-width: 70px;
+  text-align: right;
 }
 
-.entry-protein {
-  font-family: var(--font-mono);
+.entry-macros {
   font-size: 0.8rem;
-  color: var(--protein-dim);
+  display: flex;
+  gap: 0;
 }
+
+.entry-macros span {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.entry-macros .macro-p { color: var(--protein-color); min-width: 140px; }
+.entry-macros .macro-l { color: var(--warning); min-width: 120px; }
+.entry-macros .macro-g { color: var(--success); }
 
 .entry-delete {
   color: var(--text-muted);
@@ -508,7 +547,7 @@ body::before {
   font-size: 0.9rem;
   padding: 6px;
   border-radius: var(--radius-sm);
-  opacity: 0;
+  opacity: 0.4;
   transition: all var(--transition-fast);
 }
 
@@ -639,6 +678,14 @@ body::before {
 
   .summary-card .card-value {
     font-size: 1.4rem;
+  }
+
+  .card-macros .macro-value {
+    font-size: 1.4rem;
+  }
+
+  .card-macros .macro-unit {
+    font-size: 0.7rem;
   }
 
   .card-weight .weight-input-wrap input {

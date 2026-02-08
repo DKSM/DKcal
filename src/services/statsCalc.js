@@ -36,6 +36,8 @@ async function computeStats(userId = 'default', fromDate, toDate) {
   const dates = [];
   const kcalValues = [];
   const proteinValues = [];
+  const fatValues = [];
+  const carbsValues = [];
   const weightValues = [];
 
   // Fill in all dates in the range (including gaps)
@@ -51,16 +53,22 @@ async function computeStats(userId = 'default', fromDate, toDate) {
       const day = await storage.readDay(userId, dateStr);
       kcalValues.push(day.totals?.kcal || 0);
       proteinValues.push(day.totals?.protein || 0);
+      fatValues.push(day.totals?.fat || 0);
+      carbsValues.push(day.totals?.carbs || 0);
       weightValues.push(day.weight || null);
     } else {
       kcalValues.push(0);
       proteinValues.push(0);
+      fatValues.push(0);
+      carbsValues.push(0);
       weightValues.push(null);
     }
   }
 
   const nonZeroKcal = kcalValues.filter(v => v > 0);
   const nonZeroProtein = proteinValues.filter(v => v > 0);
+  const nonZeroFat = fatValues.filter(v => v > 0);
+  const nonZeroCarbs = carbsValues.filter(v => v > 0);
   const nonNullWeight = weightValues.filter(v => v != null);
 
   return {
@@ -73,6 +81,14 @@ async function computeStats(userId = 'default', fromDate, toDate) {
       values: proteinValues,
       movingAvg: movingAverage(proteinValues),
     },
+    fat: {
+      values: fatValues,
+      movingAvg: movingAverage(fatValues),
+    },
+    carbs: {
+      values: carbsValues,
+      movingAvg: movingAverage(carbsValues),
+    },
     weight: {
       values: weightValues,
       movingAvg: movingAverage(weightValues),
@@ -81,6 +97,8 @@ async function computeStats(userId = 'default', fromDate, toDate) {
     summary: {
       avgKcal: nonZeroKcal.length > 0 ? Math.round(nonZeroKcal.reduce((a, b) => a + b, 0) / nonZeroKcal.length) : 0,
       avgProtein: nonZeroProtein.length > 0 ? Math.round(nonZeroProtein.reduce((a, b) => a + b, 0) / nonZeroProtein.length * 10) / 10 : 0,
+      avgFat: nonZeroFat.length > 0 ? Math.round(nonZeroFat.reduce((a, b) => a + b, 0) / nonZeroFat.length * 10) / 10 : 0,
+      avgCarbs: nonZeroCarbs.length > 0 ? Math.round(nonZeroCarbs.reduce((a, b) => a + b, 0) / nonZeroCarbs.length * 10) / 10 : 0,
       minWeight: nonNullWeight.length > 0 ? Math.min(...nonNullWeight) : null,
       maxWeight: nonNullWeight.length > 0 ? Math.max(...nonNullWeight) : null,
       weightDelta: nonNullWeight.length >= 2 ? Math.round((nonNullWeight[nonNullWeight.length - 1] - nonNullWeight[0]) * 10) / 10 : null,

@@ -10,14 +10,20 @@ function validateItem(body) {
     return errors;
   }
 
+  const checkOptionalNum = (field, label) => {
+    if (body[field] !== undefined && body[field] !== null &&
+        (typeof body[field] !== 'number' || body[field] < 0)) {
+      errors.push(`${label} must be a non-negative number if provided`);
+    }
+  };
+
   if (body.mode === 'per_100') {
     if (typeof body.kcal_100 !== 'number' || body.kcal_100 < 0) {
       errors.push('kcal_100 must be a non-negative number');
     }
-    if (body.protein_100 !== undefined && body.protein_100 !== null &&
-        (typeof body.protein_100 !== 'number' || body.protein_100 < 0)) {
-      errors.push('protein_100 must be a non-negative number if provided');
-    }
+    checkOptionalNum('protein_100', 'protein_100');
+    checkOptionalNum('fat_100', 'fat_100');
+    checkOptionalNum('carbs_100', 'carbs_100');
     if (body.baseUnit && !['g', 'ml'].includes(body.baseUnit)) {
       errors.push('baseUnit must be g or ml');
     }
@@ -27,10 +33,9 @@ function validateItem(body) {
     if (typeof body.kcal_unit !== 'number' || body.kcal_unit < 0) {
       errors.push('kcal_unit must be a non-negative number');
     }
-    if (body.protein_unit !== undefined && body.protein_unit !== null &&
-        (typeof body.protein_unit !== 'number' || body.protein_unit < 0)) {
-      errors.push('protein_unit must be a non-negative number if provided');
-    }
+    checkOptionalNum('protein_unit', 'protein_unit');
+    checkOptionalNum('fat_unit', 'fat_unit');
+    checkOptionalNum('carbs_unit', 'carbs_unit');
   }
 
   if (body.mode === 'composite') {

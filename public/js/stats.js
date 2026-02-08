@@ -107,10 +107,26 @@ function renderCharts(container, stats) {
   ]));
 
   // Protein chart
-  chartInstances.push(createChart(container, 'Proteines (g)', stats.dates, [
-    { label: 'Proteines', data: stats.protein.values, type: 'bar', backgroundColor: 'rgba(52, 152, 219, 0.6)', borderColor: '#3498db', borderWidth: 1 },
+  chartInstances.push(createChart(container, 'Protéines (g)', stats.dates, [
+    { label: 'Protéines', data: stats.protein.values, type: 'bar', backgroundColor: 'rgba(52, 152, 219, 0.6)', borderColor: '#3498db', borderWidth: 1 },
     { label: 'Moy. 7j', data: stats.protein.movingAvg, type: 'line', borderColor: '#5dade2', borderWidth: 2, pointRadius: 0, fill: false },
   ]));
+
+  // Fat chart
+  if (stats.fat) {
+    chartInstances.push(createChart(container, 'Lipides (g)', stats.dates, [
+      { label: 'Lipides', data: stats.fat.values, type: 'bar', backgroundColor: 'rgba(241, 196, 15, 0.6)', borderColor: '#f1c40f', borderWidth: 1 },
+      { label: 'Moy. 7j', data: stats.fat.movingAvg, type: 'line', borderColor: '#f9e154', borderWidth: 2, pointRadius: 0, fill: false },
+    ]));
+  }
+
+  // Carbs chart
+  if (stats.carbs) {
+    chartInstances.push(createChart(container, 'Glucides (g)', stats.dates, [
+      { label: 'Glucides', data: stats.carbs.values, type: 'bar', backgroundColor: 'rgba(46, 204, 113, 0.6)', borderColor: '#2ecc71', borderWidth: 1 },
+      { label: 'Moy. 7j', data: stats.carbs.movingAvg, type: 'line', borderColor: '#58d68d', borderWidth: 2, pointRadius: 0, fill: false },
+    ]));
+  }
 
   // Weight chart (always shown for grid layout)
   const weightData = stats.weight.values;
@@ -170,6 +186,8 @@ function renderSummary(container, summary) {
   const cards = [
     { label: 'Moy. kcal', value: summary.avgKcal || '-' },
     { label: 'Moy. prot.', value: summary.avgProtein ? `${summary.avgProtein}g` : '-' },
+    { label: 'Moy. lip.', value: summary.avgFat ? `${summary.avgFat}g` : '-' },
+    { label: 'Moy. gluc.', value: summary.avgCarbs ? `${summary.avgCarbs}g` : '-' },
     { label: 'Jours suivis', value: summary.daysTracked || '0' },
     { label: 'Poids min', value: summary.minWeight ? `${summary.minWeight}kg` : '-' },
     { label: 'Poids max', value: summary.maxWeight ? `${summary.maxWeight}kg` : '-' },

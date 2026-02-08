@@ -166,30 +166,65 @@ export function openItemForm(existingItem, onSaved) {
         estimateResult.innerHTML = '';
         estimateResult.style.display = 'flex';
         estimateResult.appendChild(createElement('span', {
-          style: 'font-size: 0.85rem; font-weight: 600; color: var(--accent); white-space: nowrap;',
+          style: 'font-size: 0.8rem; font-weight: 600; color: var(--accent); white-space: nowrap;',
           textContent: `${result.kcal} kcal`,
         }));
         estimateResult.appendChild(createElement('span', {
-          style: 'font-size: 0.85rem; font-weight: 600; color: var(--protein-color); white-space: nowrap;',
-          textContent: `${result.protein}g`,
+          style: 'font-size: 0.8rem; white-space: nowrap;',
+          innerHTML: `<b style="color:var(--protein-color)">Protéines</b><span style="color:var(--text-secondary)"> ${result.protein}</span>`,
+        }));
+        estimateResult.appendChild(createElement('span', {
+          style: 'font-size: 0.8rem; white-space: nowrap;',
+          innerHTML: `<b style="color:var(--warning)">Lipides</b><span style="color:var(--text-secondary)"> ${result.fat}</span>`,
+        }));
+        estimateResult.appendChild(createElement('span', {
+          style: 'font-size: 0.8rem; white-space: nowrap;',
+          innerHTML: `<b style="color:var(--success)">Glucides</b><span style="color:var(--text-secondary)"> ${result.carbs}</span>`,
         }));
         estimateResult.appendChild(createElement('button', {
           className: 'btn btn-sm',
-          style: 'background: var(--success); color: #fff; border: none; padding: 4px 10px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; flex: none;',
-          textContent: '\u2713 OK',
+          style: 'background: var(--success); color: #fff; border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; flex: none;',
+          textContent: '\u2713',
+          title: 'Remplacer toutes les valeurs par celles de l\'IA',
           onClick: () => {
-            const kcalInput = panelContainer.querySelector(currentTab === 'per_unit' ? '#item-kcal-unit' : '#item-kcal-100');
-            const protInput = panelContainer.querySelector(currentTab === 'per_unit' ? '#item-protein-unit' : '#item-protein-100');
+            const suffix = currentTab === 'per_unit' ? '-unit' : '-100';
+            const kcalInput = panelContainer.querySelector(`#item-kcal${suffix}`);
+            const protInput = panelContainer.querySelector(`#item-protein${suffix}`);
+            const fatInput = panelContainer.querySelector(`#item-fat${suffix}`);
+            const carbsInput = panelContainer.querySelector(`#item-carbs${suffix}`);
             if (kcalInput) kcalInput.value = result.kcal;
             if (protInput && result.protein != null) protInput.value = result.protein;
+            if (fatInput && result.fat != null) fatInput.value = result.fat;
+            if (carbsInput && result.carbs != null) carbsInput.value = result.carbs;
             resetEstimate();
             showToast('Valeurs appliquées');
           },
         }));
         estimateResult.appendChild(createElement('button', {
           className: 'btn btn-sm',
+          style: 'background: var(--accent); color: #fff; border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; flex: none;',
+          textContent: '\u270e',
+          title: 'Compléter uniquement les champs vides ou à zéro, sans modifier les valeurs existantes',
+          onClick: () => {
+            const suffix = currentTab === 'per_unit' ? '-unit' : '-100';
+            const kcalInput = panelContainer.querySelector(`#item-kcal${suffix}`);
+            const protInput = panelContainer.querySelector(`#item-protein${suffix}`);
+            const fatInput = panelContainer.querySelector(`#item-fat${suffix}`);
+            const carbsInput = panelContainer.querySelector(`#item-carbs${suffix}`);
+            let count = 0;
+            if (kcalInput && (!kcalInput.value || parseFloat(kcalInput.value) === 0)) { kcalInput.value = result.kcal; count++; }
+            if (protInput && (!protInput.value || parseFloat(protInput.value) === 0) && result.protein != null) { protInput.value = result.protein; count++; }
+            if (fatInput && (!fatInput.value || parseFloat(fatInput.value) === 0) && result.fat != null) { fatInput.value = result.fat; count++; }
+            if (carbsInput && (!carbsInput.value || parseFloat(carbsInput.value) === 0) && result.carbs != null) { carbsInput.value = result.carbs; count++; }
+            resetEstimate();
+            showToast(count > 0 ? `${count} valeur${count > 1 ? 's' : ''} complétée${count > 1 ? 's' : ''}` : 'Rien à compléter');
+          },
+        }));
+        estimateResult.appendChild(createElement('button', {
+          className: 'btn btn-sm',
           style: 'background: var(--danger); color: #fff; border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; flex: none;',
           textContent: '\u2717',
+          title: 'Annuler l\'estimation',
           onClick: () => resetEstimate(),
         }));
       } catch (err) {
@@ -212,7 +247,7 @@ export function openItemForm(existingItem, onSaved) {
 
       if (currentTab === 'per_100g' || currentTab === 'per_100ml') {
         const unitStr = currentTab === 'per_100ml' ? '100ml' : '100g';
-        const row = createElement('div', { className: 'form-row' });
+        const row1 = createElement('div', { className: 'form-row' });
         const g1 = createElement('div', { className: 'form-group' });
         g1.appendChild(createElement('label', { textContent: `Calories /${unitStr}` }));
         g1.appendChild(createElement('input', {
@@ -221,19 +256,38 @@ export function openItemForm(existingItem, onSaved) {
           placeholder: '0', min: '0', step: 'any',
         }));
         const g2 = createElement('div', { className: 'form-group' });
-        g2.appendChild(createElement('label', { textContent: `Protéines /${unitStr}` }));
+        g2.appendChild(createElement('label', { textContent: `Prot. /${unitStr}` }));
         g2.appendChild(createElement('input', {
           className: 'input', type: 'number', id: 'item-protein-100',
           value: existingTab === currentTab ? (existingItem?.protein_100 ?? '') : '',
           placeholder: '0', min: '0', step: 'any',
         }));
-        row.appendChild(g1);
-        row.appendChild(g2);
-        panelContainer.appendChild(row);
+        row1.appendChild(g1);
+        row1.appendChild(g2);
+        panelContainer.appendChild(row1);
+
+        const row2 = createElement('div', { className: 'form-row' });
+        const g3 = createElement('div', { className: 'form-group' });
+        g3.appendChild(createElement('label', { textContent: `Lipides /${unitStr}` }));
+        g3.appendChild(createElement('input', {
+          className: 'input', type: 'number', id: 'item-fat-100',
+          value: existingTab === currentTab ? (existingItem?.fat_100 ?? '') : '',
+          placeholder: '0', min: '0', step: 'any',
+        }));
+        const g4 = createElement('div', { className: 'form-group' });
+        g4.appendChild(createElement('label', { textContent: `Glucides /${unitStr}` }));
+        g4.appendChild(createElement('input', {
+          className: 'input', type: 'number', id: 'item-carbs-100',
+          value: existingTab === currentTab ? (existingItem?.carbs_100 ?? '') : '',
+          placeholder: '0', min: '0', step: 'any',
+        }));
+        row2.appendChild(g3);
+        row2.appendChild(g4);
+        panelContainer.appendChild(row2);
       }
 
       if (currentTab === 'per_unit') {
-        const row = createElement('div', { className: 'form-row' });
+        const row1 = createElement('div', { className: 'form-row' });
         const g1 = createElement('div', { className: 'form-group' });
         g1.appendChild(createElement('label', { textContent: 'Calories /unité' }));
         g1.appendChild(createElement('input', {
@@ -242,15 +296,34 @@ export function openItemForm(existingItem, onSaved) {
           placeholder: '0', min: '0', step: 'any',
         }));
         const g2 = createElement('div', { className: 'form-group' });
-        g2.appendChild(createElement('label', { textContent: 'Protéines /unité' }));
+        g2.appendChild(createElement('label', { textContent: 'Prot. /unité' }));
         g2.appendChild(createElement('input', {
           className: 'input', type: 'number', id: 'item-protein-unit',
           value: existingItem?.mode === 'per_unit' ? (existingItem.protein_unit ?? '') : '',
           placeholder: '0', min: '0', step: 'any',
         }));
-        row.appendChild(g1);
-        row.appendChild(g2);
-        panelContainer.appendChild(row);
+        row1.appendChild(g1);
+        row1.appendChild(g2);
+        panelContainer.appendChild(row1);
+
+        const row2 = createElement('div', { className: 'form-row' });
+        const g3 = createElement('div', { className: 'form-group' });
+        g3.appendChild(createElement('label', { textContent: 'Lipides /unité' }));
+        g3.appendChild(createElement('input', {
+          className: 'input', type: 'number', id: 'item-fat-unit',
+          value: existingItem?.mode === 'per_unit' ? (existingItem.fat_unit ?? '') : '',
+          placeholder: '0', min: '0', step: 'any',
+        }));
+        const g4 = createElement('div', { className: 'form-group' });
+        g4.appendChild(createElement('label', { textContent: 'Glucides /unité' }));
+        g4.appendChild(createElement('input', {
+          className: 'input', type: 'number', id: 'item-carbs-unit',
+          value: existingItem?.mode === 'per_unit' ? (existingItem.carbs_unit ?? '') : '',
+          placeholder: '0', min: '0', step: 'any',
+        }));
+        row2.appendChild(g3);
+        row2.appendChild(g4);
+        panelContainer.appendChild(row2);
       }
 
       if (currentTab === 'composite') {
@@ -362,16 +435,16 @@ export function openItemForm(existingItem, onSaved) {
         const payload = { name, mode };
 
         if (mode === 'per_100') {
-          const kcal = panelContainer.querySelector('#item-kcal-100');
-          const protein = panelContainer.querySelector('#item-protein-100');
-          payload.kcal_100 = parseFloat(kcal?.value) || 0;
-          payload.protein_100 = protein?.value ? parseFloat(protein.value) : null;
+          payload.kcal_100 = parseFloat(panelContainer.querySelector('#item-kcal-100')?.value) || 0;
+          payload.protein_100 = panelContainer.querySelector('#item-protein-100')?.value ? parseFloat(panelContainer.querySelector('#item-protein-100').value) : null;
+          payload.fat_100 = panelContainer.querySelector('#item-fat-100')?.value ? parseFloat(panelContainer.querySelector('#item-fat-100').value) : null;
+          payload.carbs_100 = panelContainer.querySelector('#item-carbs-100')?.value ? parseFloat(panelContainer.querySelector('#item-carbs-100').value) : null;
           payload.baseUnit = currentTab === 'per_100ml' ? 'ml' : 'g';
         } else if (mode === 'per_unit') {
-          const kcal = panelContainer.querySelector('#item-kcal-unit');
-          const protein = panelContainer.querySelector('#item-protein-unit');
-          payload.kcal_unit = parseFloat(kcal?.value) || 0;
-          payload.protein_unit = protein?.value ? parseFloat(protein.value) : null;
+          payload.kcal_unit = parseFloat(panelContainer.querySelector('#item-kcal-unit')?.value) || 0;
+          payload.protein_unit = panelContainer.querySelector('#item-protein-unit')?.value ? parseFloat(panelContainer.querySelector('#item-protein-unit').value) : null;
+          payload.fat_unit = panelContainer.querySelector('#item-fat-unit')?.value ? parseFloat(panelContainer.querySelector('#item-fat-unit').value) : null;
+          payload.carbs_unit = panelContainer.querySelector('#item-carbs-unit')?.value ? parseFloat(panelContainer.querySelector('#item-carbs-unit').value) : null;
         } else if (mode === 'composite') {
           payload.components = components.map(c => ({
             itemId: c.itemId, qty: c.qty, unitType: c.unitType,
