@@ -16,12 +16,12 @@ router.get('/day/:date', async (req, res, next) => {
     const userId = req.session.userId;
     const day = await storage.readDay(userId, req.params.date);
 
-    // Enrich entries with item names
+    // Enrich entries with item names (skip temporary entries)
     const items = await storage.readItems(userId);
     const itemsMap = new Map(items.map(i => [i.id, i]));
     day.entries = day.entries.map(e => ({
       ...e,
-      itemName: itemsMap.get(e.itemId)?.name || 'Unknown',
+      itemName: e.temporary ? (e.itemName || 'Temporaire') : (itemsMap.get(e.itemId)?.name || 'Unknown'),
     }));
 
     res.json(day);
@@ -49,21 +49,48 @@ router.put('/day/:date', async (req, res, next) => {
     // Add a single entry
     if (req.body.addEntry) {
       const e = req.body.addEntry;
-      if (!e.itemId || typeof e.qty !== 'number' || !['g', 'ml', 'unit'].includes(e.unitType)) {
-        return res.status(400).json({ error: 'addEntry requires itemId, qty, unitType' });
+
+      if (e.temporary) {
+        // Temporary item — values provided directly
+        existing.entries.push({
+          id: uuidv4(),
+          itemId: null,
+          temporary: true,
+          itemName: e.itemName || 'Temporaire',
+          qty: e.qty || 1,
+          unitType: e.unitType || 'unit',
+          time: e.time || new Date().toTimeString().slice(0, 5),
+          kcal: e.kcal || 0,
+          protein: e.protein || 0,
+          fat: e.fat || 0,
+          carbs: e.carbs || 0,
+        });
+      } else {
+        if (!e.itemId || typeof e.qty !== 'number' || !['g', 'ml', 'unit'].includes(e.unitType)) {
+          return res.status(400).json({ error: 'addEntry requires itemId, qty, unitType' });
+        }
+        const nutrition = await computeEntryNutrition(userId, e.itemId, e.qty, e.unitType);
+        existing.entries.push({
+          id: uuidv4(),
+          itemId: e.itemId,
+          qty: e.qty,
+          unitType: e.unitType,
+          time: e.time || new Date().toTimeString().slice(0, 5),
+          kcal: nutrition.kcal || 0,
+          protein: nutrition.protein || 0,
+          fat: nutrition.fat || 0,
+          carbs: nutrition.carbs || 0,
+        });
       }
-      const nutrition = await computeEntryNutrition(userId, e.itemId, e.qty, e.unitType);
-      existing.entries.push({
-        id: uuidv4(),
-        itemId: e.itemId,
-        qty: e.qty,
-        unitType: e.unitType,
-        time: e.time || new Date().toTimeString().slice(0, 5),
-        kcal: nutrition.kcal || 0,
-        protein: nutrition.protein || 0,
-        fat: nutrition.fat || 0,
-        carbs: nutrition.carbs || 0,
-      });
+    }
+
+    // Update an existing entry (for editing temporary entries)
+    if (req.body.updateEntry) {
+      const u = req.body.updateEntry;
+      const idx = existing.entries.findIndex(e => e.id === u.id);
+      if (idx !== -1) {
+        existing.entries[idx] = { ...existing.entries[idx], ...u };
+      }
     }
 
     // Replace all entries (for editing)
@@ -74,18 +101,22 @@ router.put('/day/:date', async (req, res, next) => {
       }
       const recomputed = [];
       for (const e of req.body.entries) {
-        const nutrition = await computeEntryNutrition(userId, e.itemId, e.qty, e.unitType);
-        recomputed.push({
-          id: e.id || uuidv4(),
-          itemId: e.itemId,
-          qty: e.qty,
-          unitType: e.unitType,
-          time: e.time || '',
-          kcal: nutrition.kcal || 0,
-          protein: nutrition.protein || 0,
-          fat: nutrition.fat || 0,
-          carbs: nutrition.carbs || 0,
-        });
+        if (e.temporary) {
+          recomputed.push(e);
+        } else {
+          const nutrition = await computeEntryNutrition(userId, e.itemId, e.qty, e.unitType);
+          recomputed.push({
+            id: e.id || uuidv4(),
+            itemId: e.itemId,
+            qty: e.qty,
+            unitType: e.unitType,
+            time: e.time || '',
+            kcal: nutrition.kcal || 0,
+            protein: nutrition.protein || 0,
+            fat: nutrition.fat || 0,
+            carbs: nutrition.carbs || 0,
+          });
+        }
       }
       existing.entries = recomputed;
     }
@@ -111,7 +142,7 @@ router.put('/day/:date', async (req, res, next) => {
     const itemsMap = new Map(items.map(i => [i.id, i]));
     existing.entries = existing.entries.map(e => ({
       ...e,
-      itemName: itemsMap.get(e.itemId)?.name || 'Unknown',
+      itemName: e.temporary ? (e.itemName || 'Temporaire') : (itemsMap.get(e.itemId)?.name || 'Unknown'),
     }));
 
     res.json(existing);

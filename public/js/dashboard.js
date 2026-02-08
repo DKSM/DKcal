@@ -1,6 +1,6 @@
 import { $, createElement, formatDate, todayStr, addDays, showToast } from './utils.js';
 import { api } from './api.js';
-import { openAddConsumption } from './consumption.js';
+import { openAddConsumption, openTempItemForm } from './consumption.js';
 import { openItemsModal, openItemForm } from './items.js';
 import { openStatsModal } from './stats.js';
 import { logout } from './auth.js';
@@ -129,7 +129,7 @@ function renderDay() {
       createElement('button', {
         className: 'entry-edit',
         innerHTML: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>',
-        onClick: () => editItem(entry.itemId),
+        onClick: () => entry.temporary ? editTempEntry(entry) : editItem(entry.itemId),
       }),
       createElement('button', {
         className: 'entry-delete',
@@ -139,6 +139,10 @@ function renderDay() {
     ]);
     list.appendChild(item);
   }
+}
+
+function editTempEntry(entry) {
+  openTempItemForm(currentDate, () => loadDay(currentDate), entry);
 }
 
 async function editItem(itemId) {
