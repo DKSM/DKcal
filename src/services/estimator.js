@@ -6,14 +6,15 @@ const UNIT_PROMPTS = {
   'portion': 'pour',
 };
 
-async function estimateNutrition(description, unit = '100g') {
+async function estimateNutrition(description, unit = '100g', name = '') {
   if (!config.groqApiKey) {
     throw Object.assign(new Error('Clé API Groq non configurée'), { status: 503 });
   }
 
   const unitLabel = UNIT_PROMPTS[unit] || UNIT_PROMPTS['100g'];
+  const nameCtx = name ? ` (produit : "${name}")` : '';
 
-  const prompt = `${unitLabel} "${description}", donne kcal, protéines, lipides et glucides. Réponds UNIQUEMENT : {"kcal":nombre,"protein":nombre,"fat":nombre,"carbs":nombre}`;
+  const prompt = `${unitLabel} "${description}"${nameCtx}, donne kcal, protéines, lipides et glucides. Toutes les valeurs doivent être cohérentes entre elles (kcal = protein*4 + fat*9 + carbs*4 environ). Réponds UNIQUEMENT : {"kcal":nombre,"protein":nombre,"fat":nombre,"carbs":nombre}`;
 
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',

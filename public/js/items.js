@@ -78,26 +78,14 @@ function showHintPopup() {
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 014 12.7V17a1 1 0 01-1 1H9a1 1 0 01-1-1v-2.3A7 7 0 0112 2z"/></svg>
       Optimiser l'estimation IA
     </h3>
-    <p>L'IA utilise le <strong>Nom</strong> et la <strong>Description</strong> pour estimer les valeurs nutritionnelles. Le nom est le titre court de votre aliment. La description est l'endroit id\u00e9al pour d\u00e9tailler la composition.</p>
-    <p><strong>Comment faire :</strong></p>
-    <ul>
-      <li>Donnez un <strong>nom court</strong> : \u00ab\u00a0Caf\u00e9 au lait\u00a0\u00bb, \u00ab\u00a0Lasagnes maison\u00a0\u00bb</li>
-      <li>D\u00e9taillez dans la <strong>description</strong> : ingr\u00e9dients, quantit\u00e9s, marques, cuisson</li>
-      <li>La description est <strong>sauvegard\u00e9e</strong> \u2014 pas besoin de la r\u00e9\u00e9crire \u00e0 chaque estimation</li>
-    </ul>
-    <p><strong>Exemple :</strong></p>
-    <div class="hint-example"><strong>Nom :</strong> Caf\u00e9 au lait<br><strong>Description :</strong> 50ml lait demi-\u00e9cr\u00e9m\u00e9, 2 morceaux de sucre</div>
-    <p><strong>Exemple avanc\u00e9 :</strong></p>
-    <div class="hint-example"><strong>Nom :</strong> Lasagnes maison<br><strong>Description :</strong> 3 feuilles de p\u00e2te, 150g bolognaise (boeuf hach\u00e9 5%, oignon, coulis de tomate), 80g b\u00e9chamel (beurre, farine, lait entier), 30g gruy\u00e8re r\u00e2p\u00e9</div>
-    <p><strong>Ce que vous pouvez pr\u00e9ciser :</strong></p>
-    <ul>
-      <li>La <strong>marque</strong> du produit (Danone, Kinder, Barilla...)</li>
-      <li>Les <strong>quantit\u00e9s</strong> exactes (200g, 1 cuill\u00e8re \u00e0 soupe...)</li>
-      <li>Le mode de <strong>pr\u00e9paration</strong> (cru, cuit, grill\u00e9, frit, vapeur...)</li>
-      <li>Une <strong>recette enti\u00e8re</strong> avec tous ses ingr\u00e9dients</li>
-    </ul>
-    <p>Il n'y a aucune limite de d\u00e9tail. Vous pouvez d\u00e9crire un plat entier avec chaque ingr\u00e9dient et sa quantit\u00e9.</p>
-    <p class="hint-note">L'estimation reste une approximation bas\u00e9e sur des moyennes nutritionnelles. Elle ne remplace pas l'\u00e9tiquette d'un produit, mais donne un ordre de grandeur fiable pour le suivi au quotidien.</p>
+    <p>Si une <strong>description</strong> est remplie, c'est elle seule qui pilote l'IA. Sinon, l'IA se base sur le <strong>nom</strong>.</p>
+    <p><strong>Pourquoi utiliser la description ?</strong></p>
+    <p>Le nom est souvent trop vague (\u00ab\u00a0Skittles Lidl\u00a0\u00bb). La description permet de pr\u00e9ciser exactement ce que l'IA doit estimer : quantit\u00e9, poids, marque, pr\u00e9paration.</p>
+    <p><strong>Exemples :</strong></p>
+    <div class="hint-example"><strong>Nom :</strong> Caf\u00e9 au lait<br><strong>Description :</strong> 1 tasse : 150ml caf\u00e9, 50ml lait demi-\u00e9cr\u00e9m\u00e9, 2 sucres</div>
+    <div class="hint-example"><strong>Nom :</strong> Skittles Lidl<br><strong>Description :</strong> 1 skittle = 0.8 grammes</div>
+    <div class="hint-example"><strong>Nom :</strong> Lasagnes maison<br><strong>Description :</strong> 1 part (350g) : 3 feuilles de p\u00e2te, 150g bolognaise, 80g b\u00e9chamel, 30g gruy\u00e8re</div>
+    <p class="hint-note">Sans description, l'IA se d\u00e9brouille avec le nom seul \u2014 \u00e7a marche pour les produits connus, mais la description donne des r\u00e9sultats bien plus pr\u00e9cis.</p>
   `;
 
   const closeBtn = createElement('button', {
@@ -222,17 +210,19 @@ export function openItemForm(existingItem, onSaved) {
     }
 
     async function doEstimate() {
+      const desc = descInput.value.trim();
       const text = nameInput.value.trim();
-      if (!text) { showToast('Remplis le nom d\'abord', true); return; }
+      if (!desc && !text) { showToast('Remplis au moins le nom ou la description', true); return; }
 
       const unit = currentTab === 'per_unit' ? 'portion' : currentTab === 'per_100ml' ? '100ml' : '100g';
       estimateBtn.disabled = true;
       estimateBtn.textContent = '...';
 
       try {
-        const desc = descInput.value.trim();
-        let url = `/api/estimate?q=${encodeURIComponent(text)}&unit=${unit}`;
-        if (desc) url += `&desc=${encodeURIComponent(desc)}`;
+        const params = new URLSearchParams({ unit });
+        if (desc) params.set('desc', desc);
+        if (text) params.set('q', text);
+        let url = `/api/estimate?${params}`;
         const result = await api.get(url);
         pendingEstimate = result;
 

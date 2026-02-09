@@ -55,12 +55,13 @@ app.use('/api', profileRoutes);
 // AI nutrition estimate
 app.get('/api/estimate', async (req, res, next) => {
   try {
-    const q = req.query.q;
-    if (!q) return res.status(400).json({ error: 'q parameter required' });
-    const unit = req.query.unit || '100g';
+    const q = req.query.q || '';
     const desc = req.query.desc || '';
-    const fullQuery = desc ? `${q} (${desc})` : q;
-    const result = await estimateNutrition(fullQuery, unit);
+    if (!desc && !q) return res.status(400).json({ error: 'Nom ou description requis' });
+    const unit = req.query.unit || '100g';
+    const primary = desc || q;
+    const context = desc ? q : '';
+    const result = await estimateNutrition(primary, unit, context);
     res.json(result);
   } catch (err) {
     next(err);

@@ -294,16 +294,18 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
 
     // AI estimate logic
     async function doEstimate() {
+      const desc = descInput.value.trim();
       const text = nameInput.value.trim();
-      if (!text) { showToast('Remplis le nom d\'abord', true); return; }
+      if (!desc && !text) { showToast('Remplis au moins le nom ou la description', true); return; }
 
       estimateBtn.disabled = true;
       estimateBtn.textContent = '...';
 
       try {
-        const desc = descInput.value.trim();
-        let url = `/api/estimate?q=${encodeURIComponent(text)}&unit=portion`;
-        if (desc) url += `&desc=${encodeURIComponent(desc)}`;
+        const params = new URLSearchParams({ unit: 'portion' });
+        if (desc) params.set('desc', desc);
+        if (text) params.set('q', text);
+        let url = `/api/estimate?${params}`;
         const result = await api.get(url);
 
         kcalInput.value = result.kcal;
