@@ -63,6 +63,12 @@ router.put('/profile', async (req, res, next) => {
       }
       existing.customActivity = b.customActivity;
     }
+    if (b.deficitGoal !== undefined) {
+      if (typeof b.deficitGoal !== 'number' || b.deficitGoal < 0 || b.deficitGoal > 5000) {
+        return res.status(400).json({ error: 'deficitGoal must be between 0 and 5000' });
+      }
+      existing.deficitGoal = b.deficitGoal;
+    }
     if (b.maintenanceCalories !== undefined) existing.maintenanceCalories = b.maintenanceCalories;
     if (b.calorieAdjust !== undefined) {
       if (typeof b.calorieAdjust !== 'number' || b.calorieAdjust < -50 || b.calorieAdjust > 100) {

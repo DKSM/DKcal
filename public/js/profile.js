@@ -197,6 +197,20 @@ export function openProfileModal(onSaved) {
     }
     updateMaintenance();
 
+    // Deficit goal
+    const deficitGroup = createElement('div', { className: 'form-group' });
+    deficitGroup.appendChild(createElement('label', { textContent: 'Objectif déficit (kcal)' }));
+    deficitGroup.appendChild(createElement('div', {
+      className: 'form-hint',
+      textContent: 'Nombre de kcal en dessous du maintien que tu vises. 0 = pas d\'objectif.',
+    }));
+    const deficitInput = createElement('input', {
+      className: 'input', type: 'number', min: '0', max: '5000', step: '50',
+      placeholder: '0', value: profile.deficitGoal || '',
+    });
+    deficitGroup.appendChild(deficitInput);
+    body.appendChild(deficitGroup);
+
     // Calorie adjustment
     const adjustGroup = createElement('div', { className: 'form-group' });
     adjustGroup.appendChild(createElement('label', { textContent: 'Ajustement calorique (%)' }));
@@ -231,6 +245,7 @@ export function openProfileModal(onSaved) {
           activityMode,
           customActivity,
           maintenanceCalories,
+          deficitGoal: deficitInput.value ? parseInt(deficitInput.value) : 0,
           calorieAdjust: adjustInput.value ? parseInt(adjustInput.value) : 0,
         };
         try {

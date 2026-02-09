@@ -290,8 +290,8 @@ body::before {
   height: 6px;
   background: rgba(255, 255, 255, 0.06);
   border-radius: 3px;
-  overflow: hidden;
   flex-shrink: 0;
+  position: relative;
 }
 
 .deficit-bar-fill {
@@ -300,6 +300,8 @@ body::before {
   background: var(--success);
   transition: width 0.4s ease, background 0.4s ease;
   width: 0%;
+  position: relative;
+  z-index: 1;
 }
 
 .deficit-bar-fill.warning {
@@ -308,6 +310,45 @@ body::before {
 
 .deficit-bar-fill.over {
   background: var(--danger);
+}
+
+.deficit-bar-fill.over-glow {
+  --glow-size: 6px;
+  background: var(--danger);
+  animation: deficit-glow 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes deficit-glow {
+  0% {
+    box-shadow: 0 0 2px var(--danger), 0 0 var(--glow-size) rgba(255, 75, 75, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 4px var(--danger), 0 0 calc(var(--glow-size) * 1.8) rgba(255, 75, 75, 0.7);
+  }
+}
+
+.deficit-goal-cursor {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  background: var(--text-secondary);
+  border-radius: 1px;
+  z-index: 2;
+  transition: left 0.4s ease;
+  display: none;
+}
+
+.deficit-goal-cursor::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-secondary);
 }
 
 .deficit-text {

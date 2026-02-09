@@ -165,6 +165,7 @@ function updateDeficitDisplay() {
   const maintenance = profile.maintenanceCalories;
   const barFill = $('#deficit-bar-fill');
   const deficitText = $('#deficit-text');
+  const goalCursor = $('#deficit-goal-cursor');
 
   if (!maintenance) {
     barFill.style.width = '0%';
@@ -172,19 +173,51 @@ function updateDeficitDisplay() {
     deficitText.innerHTML = '<span class="deficit-hint">Configurer profil</span>';
     const hint = deficitText.querySelector('.deficit-hint');
     if (hint) hint.addEventListener('click', () => openProfileModal(() => updateDeficitDisplay()));
+    goalCursor.style.display = 'none';
     return;
   }
 
   const consumed = currentDay ? adjustCal(Math.round(currentDay.totals.kcal)) : 0;
+  const deficitGoal = profile.deficitGoal || 0;
+  const goalTarget = deficitGoal > 0 ? maintenance - deficitGoal : 0;
   const pct = Math.round((consumed / maintenance) * 100);
 
+  // Bar fill width
   barFill.style.width = `${Math.min(pct, 100)}%`;
   barFill.className = 'deficit-bar-fill';
-  if (pct > 100) {
-    barFill.classList.add('over');
-    barFill.style.width = '100%';
-  } else if (pct > 75) {
-    barFill.classList.add('warning');
+  barFill.style.removeProperty('--glow-size');
+
+  // Reset inline background from previous render
+  barFill.style.removeProperty('background');
+
+  if (deficitGoal > 0) {
+    // With deficit goal: progressive green → orange → red between goal and maintenance
+    const goalPct = (goalTarget / maintenance) * 100;
+    goalCursor.style.display = '';
+    goalCursor.style.left = `${goalPct}%`;
+
+    if (pct > 100) {
+      barFill.classList.add('over-glow');
+      barFill.style.width = '100%';
+      const overPct = Math.min((consumed - maintenance) / maintenance, 0.5);
+      const glowSize = Math.round(4 + overPct * 20);
+      barFill.style.setProperty('--glow-size', `${glowSize}px`);
+    } else if (consumed > goalTarget) {
+      // Interpolate hue: green (145) → red (0) as consumed goes from goalTarget to maintenance
+      const ratio = Math.min((consumed - goalTarget) / (maintenance - goalTarget), 1);
+      const hue = Math.round(145 * (1 - ratio));
+      barFill.style.background = `hsl(${hue}, 70%, 50%)`;
+    }
+    // else: stays green (default CSS)
+  } else {
+    // No deficit goal: original behavior
+    goalCursor.style.display = 'none';
+    if (pct > 100) {
+      barFill.classList.add('over');
+      barFill.style.width = '100%';
+    } else if (pct > 75) {
+      barFill.classList.add('warning');
+    }
   }
 
   const diff = consumed - maintenance;
