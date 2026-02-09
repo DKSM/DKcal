@@ -86,17 +86,37 @@ router.put('/day/:date', async (req, res, next) => {
       }
     }
 
-    // Update an existing entry (for editing temporary entries)
+    // Update an existing entry
     if (req.body.updateEntry) {
       const u = req.body.updateEntry;
       const idx = existing.entries.findIndex(e => e.id === u.id);
       if (idx !== -1) {
-        const allowed = ['itemName', 'description', 'qty', 'unitType', 'time', 'kcal', 'protein', 'fat', 'carbs'];
-        const filtered = {};
-        for (const key of allowed) {
-          if (u[key] !== undefined) filtered[key] = u[key];
+        const entry = existing.entries[idx];
+
+        if (entry.itemId && (u.qty !== undefined || u.unitType !== undefined)) {
+          // Non-temporary entry with qty/unit change: recalculate nutrition
+          const newQty = u.qty !== undefined ? u.qty : entry.qty;
+          const newUnit = u.unitType !== undefined ? u.unitType : entry.unitType;
+          const nutrition = await computeEntryNutrition(userId, entry.itemId, newQty, newUnit);
+          existing.entries[idx] = {
+            ...entry,
+            qty: newQty,
+            unitType: newUnit,
+            time: u.time !== undefined ? u.time : entry.time,
+            kcal: nutrition.kcal || 0,
+            protein: nutrition.protein || 0,
+            fat: nutrition.fat || 0,
+            carbs: nutrition.carbs || 0,
+          };
+        } else {
+          // Temporary entry or no qty change: apply fields directly
+          const allowed = ['itemName', 'description', 'qty', 'unitType', 'time', 'kcal', 'protein', 'fat', 'carbs'];
+          const filtered = {};
+          for (const key of allowed) {
+            if (u[key] !== undefined) filtered[key] = u[key];
+          }
+          existing.entries[idx] = { ...entry, ...filtered };
         }
-        existing.entries[idx] = { ...existing.entries[idx], ...filtered };
       }
     }
 

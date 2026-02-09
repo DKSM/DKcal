@@ -4,7 +4,13 @@ import { openAddConsumption, openTempItemForm } from './consumption.js';
 import { openItemsModal, openItemForm } from './items.js';
 import { openStatsModal } from './stats.js';
 import { loadProfile, getProfile, openProfileModal, adjustCal } from './profile.js';
+import { openModal } from './modal.js';
 import { logout } from './auth.js';
+
+function displayUnit(unitType) {
+  if (unitType === 'unit') return 'unité';
+  return unitType;
+}
 
 let currentDate = todayStr();
 let currentDay = null;
@@ -134,21 +140,29 @@ function renderDay() {
       createElement('span', { className: 'macro-g', innerHTML: `<span class="macro-label-full">Glucides : </span><span class="macro-label-short">G:</span>${entry.carbs ?? 0}g` }),
     ];
 
+    const editBtn = createElement('button', {
+      className: 'entry-edit',
+      innerHTML: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>',
+    });
+    editBtn.addEventListener('click', (e) => {
+      if (entry.temporary) {
+        editTempEntry(entry);
+      } else {
+        showEntryEditPopup(entry, editBtn);
+      }
+    });
+
     const item = createElement('div', { className: 'entry-item' }, [
       createElement('span', { className: 'entry-time', textContent: entry.time || '' }),
       createElement('div', { className: 'entry-info' }, [
-        createElement('div', { className: 'entry-name', textContent: entry.itemName || 'Unknown' }),
-        createElement('div', { className: 'entry-detail', textContent: `${entry.qty} ${entry.unitType}` }),
+        createElement('span', { className: 'entry-name', textContent: entry.itemName || 'Unknown' }),
+        createElement('span', { className: 'entry-qty-inline', textContent: `(${entry.qty} ${displayUnit(entry.unitType)})` }),
       ]),
       createElement('div', { className: 'entry-nutrition' }, [
         createElement('span', { className: 'entry-kcal', textContent: `${adjustCal(Math.round(entry.kcal))} kcal` }),
         createElement('span', { className: 'entry-macros' }, macroSpans),
       ]),
-      createElement('button', {
-        className: 'entry-edit',
-        innerHTML: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>',
-        onClick: () => entry.temporary ? editTempEntry(entry) : editItem(entry.itemId),
-      }),
+      editBtn,
       createElement('button', {
         className: 'entry-delete',
         innerHTML: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>',
@@ -239,6 +253,83 @@ async function editItem(itemId) {
   } catch (err) {
     showToast(err.message, true);
   }
+}
+
+function showEntryEditPopup(entry, buttonEl) {
+  document.querySelectorAll('.entry-edit-popup').forEach(p => p.remove());
+
+  const popup = createElement('div', { className: 'entry-edit-popup' }, [
+    createElement('button', {
+      className: 'entry-edit-option',
+      textContent: 'Modifier la quantité',
+      onClick: () => { popup.remove(); editEntryQty(entry); },
+    }),
+    createElement('button', {
+      className: 'entry-edit-option',
+      textContent: 'Modifier l\'aliment',
+      onClick: () => { popup.remove(); editItem(entry.itemId); },
+    }),
+  ]);
+
+  document.body.appendChild(popup);
+  const rect = buttonEl.getBoundingClientRect();
+  popup.style.top = `${rect.bottom + 4}px`;
+  popup.style.right = `${window.innerWidth - rect.right}px`;
+
+  const closePopup = (e) => {
+    if (!popup.contains(e.target) && e.target !== buttonEl) {
+      popup.remove();
+      document.removeEventListener('click', closePopup);
+    }
+  };
+  setTimeout(() => document.addEventListener('click', closePopup), 0);
+}
+
+function editEntryQty(entry) {
+  openModal('Modifier la quantité', (body, handle) => {
+    body.appendChild(createElement('div', {
+      style: 'margin-bottom: 12px; font-weight: 600; color: var(--accent);',
+      textContent: entry.itemName || 'Unknown',
+    }));
+
+    const qtyRow = createElement('div', { className: 'form-row' });
+    const qtyInput = createElement('input', {
+      className: 'input', type: 'number', value: String(entry.qty),
+      min: '0.1', step: 'any',
+    });
+    const unitSelect = createElement('select', { className: 'input' });
+    for (const u of ['g', 'ml', 'unit']) {
+      const opt = createElement('option', { value: u, textContent: u === 'unit' ? 'unité' : u });
+      if (u === entry.unitType) opt.selected = true;
+      unitSelect.appendChild(opt);
+    }
+    qtyRow.appendChild(qtyInput);
+    qtyRow.appendChild(unitSelect);
+    body.appendChild(qtyRow);
+
+    body.appendChild(createElement('button', {
+      className: 'btn btn-primary',
+      textContent: 'Enregistrer',
+      style: 'width: 100%; margin-top: 12px;',
+      onClick: async () => {
+        const qty = parseFloat(qtyInput.value);
+        if (!qty || qty <= 0) { showToast('Quantité invalide', true); return; }
+        try {
+          currentDay = await api.put(`/api/day/${currentDate}`, {
+            updateEntry: { id: entry.id, qty, unitType: unitSelect.value },
+          });
+          handle.close();
+          renderDay();
+          showToast('Quantité modifiée');
+        } catch (err) {
+          showToast(err.message, true);
+        }
+      },
+    }));
+
+    qtyInput.focus();
+    qtyInput.select();
+  });
 }
 
 async function removeEntry(entryId) {
