@@ -75,15 +75,15 @@ export function openItemsModal(onDone) {
       }
       for (const item of items) {
         const computed = item.computed || {};
-        const kcalStr = computed.kcal != null ? `${adjustCal(Math.round(computed.kcal))} kcal` : '?';
+        const kcalStr = computed.kcal != null ? `${adjustCal(Math.round(computed.kcal))} kcal` : '';
         const modeLabel = item.mode === 'per_100' ? (item.baseUnit === 'ml' ? '/100ml' : '/100g') : item.mode === 'per_unit' ? '/unité' : 'recette';
 
         const el = createElement('div', { className: 'item-list-entry', onClick: () => {
           openItemForm(item, async () => { await loadItems(); if (onDone) onDone(); });
         }}, [
-          createElement('div', { style: 'flex: 1; min-width: 0;' }, [
-            createElement('div', { className: 'entry-name', textContent: item.name }),
-            createElement('div', { className: 'entry-detail', textContent: kcalStr }),
+          createElement('div', { className: 'item-list-info' }, [
+            createElement('span', { className: 'item-list-name', textContent: item.name }),
+            createElement('span', { className: 'item-list-kcal', textContent: kcalStr }),
           ]),
           createElement('span', { className: 'item-mode-badge', textContent: modeLabel }),
         ]);
