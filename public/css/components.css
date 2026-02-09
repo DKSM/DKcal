@@ -60,6 +60,7 @@
   pointer-events: none;
   animation: rainbow-glow 2s linear infinite;
   border-color: transparent;
+  gap: 0;
 }
 
 .btn-loading::after {
