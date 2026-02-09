@@ -292,9 +292,10 @@ export function openItemForm(existingItem, onSaved) {
           style: 'font-size: 0.8rem; white-space: nowrap;',
           innerHTML: `<b style="color:var(--success)">Glucides :</b><span style="color:var(--text-secondary)"> ${result.carbs}</span>`,
         }));
-        estimateResultRow.appendChild(createElement('button', {
+        const btnGroup = createElement('div', { style: 'margin-left: auto; display: flex; gap: 6px; flex-shrink: 0;' });
+        btnGroup.appendChild(createElement('button', {
           className: 'btn btn-sm',
-          style: 'background: var(--success); color: #fff; border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; flex: none;',
+          style: 'background: var(--success); color: #fff; border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;',
           textContent: '\u2713',
           title: 'Remplacer toutes les valeurs par celles de l\'IA',
           onClick: () => {
@@ -311,9 +312,9 @@ export function openItemForm(existingItem, onSaved) {
             showToast('Valeurs appliquées');
           },
         }));
-        estimateResultRow.appendChild(createElement('button', {
+        btnGroup.appendChild(createElement('button', {
           className: 'btn btn-sm',
-          style: 'background: var(--accent); color: #fff; border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; flex: none;',
+          style: 'background: var(--accent); color: #fff; border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;',
           textContent: '\u270e',
           title: 'Compléter uniquement les champs vides ou à zéro',
           onClick: () => {
@@ -331,13 +332,14 @@ export function openItemForm(existingItem, onSaved) {
             showToast(count > 0 ? `${count} valeur${count > 1 ? 's' : ''} complétée${count > 1 ? 's' : ''}` : 'Rien à compléter');
           },
         }));
-        estimateResultRow.appendChild(createElement('button', {
+        btnGroup.appendChild(createElement('button', {
           className: 'btn btn-sm',
-          style: 'background: var(--danger); color: #fff; border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; flex: none;',
+          style: 'background: var(--danger); color: #fff; border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;',
           textContent: '\u2717',
           title: 'Annuler l\'estimation',
           onClick: () => resetEstimate(),
         }));
+        estimateResultRow.appendChild(btnGroup);
       } catch (err) {
         showToast(err.message, true);
         resetEstimate();
