@@ -433,6 +433,18 @@ body::before {
   flex: 1;
 }
 
+.card-macros .macro-item:first-child {
+  text-align: left;
+}
+
+.card-macros .macro-item:nth-child(2) {
+  text-align: center;
+}
+
+.card-macros .macro-item:last-child {
+  text-align: right;
+}
+
 .card-macros .macro-value {
   font-size: 2rem;
   font-weight: 700;
@@ -468,6 +480,13 @@ body::before {
 .card-kcal .card-value { color: var(--accent-bright); }
 .card-weight .card-value { color: var(--weight-color); }
 
+.summary-card .card-unit {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-left: 2px;
+}
+
 .summary-card .card-label {
   font-size: 0.75rem;
   font-weight: 500;
@@ -480,6 +499,7 @@ body::before {
   display: flex;
   align-items: baseline;
   gap: 4px;
+  margin-bottom: 4px;
 }
 
 .card-weight .weight-input-wrap input {
@@ -492,6 +512,7 @@ body::before {
   width: 120px;
   padding: 0;
   line-height: 1;
+  height: 2rem;
   outline: none;
 }
 
