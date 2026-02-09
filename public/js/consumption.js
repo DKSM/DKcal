@@ -306,7 +306,7 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
       estimateBtn.textContent = LOADING_PHRASES[Math.floor(Math.random() * LOADING_PHRASES.length)];
       phraseInterval = setInterval(() => {
         estimateBtn.textContent = LOADING_PHRASES[Math.floor(Math.random() * LOADING_PHRASES.length)];
-      }, 2500);
+      }, 2000);
     }
 
     function stopLoading() {

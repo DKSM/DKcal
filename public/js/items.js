@@ -245,7 +245,7 @@ export function openItemForm(existingItem, onSaved) {
       estimateBtn.textContent = LOADING_PHRASES[Math.floor(Math.random() * LOADING_PHRASES.length)];
       phraseInterval = setInterval(() => {
         estimateBtn.textContent = LOADING_PHRASES[Math.floor(Math.random() * LOADING_PHRASES.length)];
-      }, 2500);
+      }, 2000);
     }
 
     async function doEstimate() {
@@ -280,15 +280,15 @@ export function openItemForm(existingItem, onSaved) {
         }));
         estimateResultRow.appendChild(createElement('span', {
           style: 'font-size: 0.8rem; white-space: nowrap;',
-          innerHTML: `<b style="color:var(--protein-color)">P</b><span style="color:var(--text-secondary)"> ${result.protein}</span>`,
+          innerHTML: `<b style="color:var(--protein-color)">Protéines :</b><span style="color:var(--text-secondary)"> ${result.protein}</span>`,
         }));
         estimateResultRow.appendChild(createElement('span', {
           style: 'font-size: 0.8rem; white-space: nowrap;',
-          innerHTML: `<b style="color:var(--warning)">L</b><span style="color:var(--text-secondary)"> ${result.fat}</span>`,
+          innerHTML: `<b style="color:var(--warning)">Lipides :</b><span style="color:var(--text-secondary)"> ${result.fat}</span>`,
         }));
         estimateResultRow.appendChild(createElement('span', {
           style: 'font-size: 0.8rem; white-space: nowrap;',
-          innerHTML: `<b style="color:var(--success)">G</b><span style="color:var(--text-secondary)"> ${result.carbs}</span>`,
+          innerHTML: `<b style="color:var(--success)">Glucides :</b><span style="color:var(--text-secondary)"> ${result.carbs}</span>`,
         }));
         estimateResultRow.appendChild(createElement('button', {
           className: 'btn btn-sm',
