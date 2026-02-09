@@ -63,11 +63,11 @@ router.put('/profile', async (req, res, next) => {
       }
       existing.customActivity = b.customActivity;
     }
-    if (b.deficitGoal !== undefined) {
-      if (typeof b.deficitGoal !== 'number' || b.deficitGoal < 0 || b.deficitGoal > 5000) {
-        return res.status(400).json({ error: 'deficitGoal must be between 0 and 5000' });
+    if (b.deficitPct !== undefined) {
+      if (typeof b.deficitPct !== 'number' || b.deficitPct < 1 || b.deficitPct > 100) {
+        return res.status(400).json({ error: 'deficitPct must be between 1 and 100' });
       }
-      existing.deficitGoal = b.deficitGoal;
+      existing.deficitPct = b.deficitPct;
     }
     if (b.maintenanceCalories !== undefined) existing.maintenanceCalories = b.maintenanceCalories;
     if (b.calorieAdjust !== undefined) {

@@ -192,8 +192,8 @@ function updateDeficitDisplay() {
   }
 
   const consumed = currentDay ? adjustCal(Math.round(currentDay.totals.kcal)) : 0;
-  const deficitGoal = profile.deficitGoal || 0;
-  const goalTarget = deficitGoal > 0 ? maintenance - deficitGoal : 0;
+  const deficitPct = profile.deficitPct != null ? profile.deficitPct : 100;
+  const goalTarget = deficitPct < 100 ? Math.round(maintenance * deficitPct / 100) : 0;
   const pct = Math.round((consumed / maintenance) * 100);
 
   // Bar fill width
@@ -204,11 +204,11 @@ function updateDeficitDisplay() {
   // Reset inline background from previous render
   barFill.style.removeProperty('background');
 
-  if (deficitGoal > 0) {
+  if (deficitPct < 100) {
     // With deficit goal: progressive green → orange → red between goal and maintenance
-    const goalPct = (goalTarget / maintenance) * 100;
+    const goalBarPct = deficitPct;
     goalCursor.style.display = 'block';
-    goalCursor.style.left = `${goalPct}%`;
+    goalCursor.style.left = `${goalBarPct}%`;
 
     if (pct > 100) {
       barFill.classList.add('over-glow');

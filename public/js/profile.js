@@ -183,6 +183,8 @@ export function openProfileModal(onSaved) {
       updateMaintenance();
     }
 
+    let onMaintenanceChange = null;
+
     function updateMaintenance() {
       const bmr = parseInt(bmrInput.value) || 0;
       const mode = activitySelect.value;
@@ -194,22 +196,73 @@ export function openProfileModal(onSaved) {
         maintenanceDisplay.textContent = '--';
         maintenanceDisplay.style.color = 'var(--text-muted)';
       }
+      if (onMaintenanceChange) onMaintenanceChange();
     }
     updateMaintenance();
 
-    // Deficit goal
+    // Deficit slider (percentage of maintenance)
     const deficitGroup = createElement('div', { className: 'form-group' });
-    deficitGroup.appendChild(createElement('label', { textContent: 'Objectif déficit (kcal)' }));
+    deficitGroup.appendChild(createElement('label', { textContent: 'Objectif journalier' }));
     deficitGroup.appendChild(createElement('div', {
       className: 'form-hint',
-      textContent: 'Nombre de kcal en dessous du maintien que tu vises. 0 = pas d\'objectif.',
+      textContent: '100% = manger au maintien. Réduis pour viser un déficit.',
     }));
-    const deficitInput = createElement('input', {
-      className: 'input', type: 'number', min: '0', max: '5000', step: '50',
-      placeholder: '0', value: profile.deficitGoal || '',
+    const sliderRow = createElement('div', { className: 'deficit-slider-row' });
+    const deficitSlider = createElement('input', {
+      type: 'range', className: 'deficit-slider',
+      min: '1', max: '100', step: '1',
+      value: profile.deficitPct != null ? profile.deficitPct : 100,
     });
-    deficitGroup.appendChild(deficitInput);
+    const sliderPctLabel = createElement('span', { className: 'deficit-slider-pct' });
+    sliderRow.appendChild(deficitSlider);
+    sliderRow.appendChild(sliderPctLabel);
+    deficitGroup.appendChild(sliderRow);
+    const sliderInfo = createElement('div', { className: 'deficit-slider-info' });
+    deficitGroup.appendChild(sliderInfo);
+    const sliderWarning = createElement('div', { className: 'deficit-slider-warning' });
+    deficitGroup.appendChild(sliderWarning);
     body.appendChild(deficitGroup);
+
+    const SLIDER_ZONES = [
+      { max: 25, color: '#FF5252', text: 'On a dit perdre du gras, pas perdre connaissance.' },
+      { max: 50, color: '#E53935', text: 'Déficit très agressif. En dessous de 50\u00a0%, le stress physiologique augmente fortement (fatigue, adaptation métabolique, perte musculaire possible). À éviter sauf contexte très spécifique et très court.' },
+      { max: 62, color: '#FB8C00', text: 'Déficit agressif mais tolérable à court terme. À utiliser sur des périodes limitées.' },
+      { max: 75, color: '#FDD835', text: 'Zone de perte efficace et encore soutenable. Bon compromis entre vitesse et confort.' },
+      { max: 87, color: '#43A047', text: 'Zone recommandée pour une perte durable et stable, avec faible stress physiologique.' },
+      { max: 100, color: '#1E88E5', text: 'Maintenance ou perte très lente. Idéal pour stabilisation ou périodes sociales.' },
+    ];
+
+    function updateSliderDisplay() {
+      const pct = parseInt(deficitSlider.value);
+      sliderPctLabel.textContent = `${pct}%`;
+      const bmr = parseInt(bmrInput.value) || 0;
+      const mode = activitySelect.value;
+      const custom = parseInt(customInput.value) || 0;
+      const m = computeMaintenance(bmr, mode, custom);
+      if (m && pct < 100) {
+        const target = Math.round(m * pct / 100);
+        const deficit = m - target;
+        sliderInfo.textContent = `Objectif : ${target} kcal/jour (−${deficit} kcal)`;
+        sliderInfo.style.display = 'block';
+      } else if (m && pct === 100) {
+        sliderInfo.textContent = `Objectif : ${m} kcal/jour (maintien)`;
+        sliderInfo.style.display = 'block';
+      } else {
+        sliderInfo.style.display = 'none';
+      }
+      const zone = SLIDER_ZONES.find(z => pct <= z.max) || SLIDER_ZONES[SLIDER_ZONES.length - 1];
+      if (pct === 1) {
+        sliderWarning.innerHTML = '<strong>Objectif\u00a0: devenir un souvenir.</strong>';
+      } else {
+        sliderWarning.textContent = zone.text;
+      }
+      sliderWarning.style.color = zone.color;
+      sliderWarning.style.display = 'block';
+      sliderPctLabel.style.color = zone.color;
+    }
+    deficitSlider.addEventListener('input', updateSliderDisplay);
+    onMaintenanceChange = updateSliderDisplay;
+    updateSliderDisplay();
 
     // Calorie adjustment
     const adjustGroup = createElement('div', { className: 'form-group' });
@@ -245,7 +298,7 @@ export function openProfileModal(onSaved) {
           activityMode,
           customActivity,
           maintenanceCalories,
-          deficitGoal: deficitInput.value ? parseInt(deficitInput.value) : 0,
+          deficitPct: parseInt(deficitSlider.value),
           calorieAdjust: adjustInput.value ? parseInt(adjustInput.value) : 0,
         };
         try {
