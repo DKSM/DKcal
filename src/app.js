@@ -84,8 +84,10 @@ app.get('/api/suggestions', async (req, res, next) => {
       }
     }
 
+    const { computeItemNutrition } = require('./services/itemCalc');
+    const itemsMap = new Map(items.map(i => [i.id, i]));
     const suggestions = items
-      .map(item => ({ ...item, frequency: freq[item.id] || 0 }))
+      .map(item => ({ ...item, frequency: freq[item.id] || 0, computed: computeItemNutrition(item, itemsMap) }))
       .sort((a, b) => b.frequency - a.frequency);
 
     res.json(suggestions);
