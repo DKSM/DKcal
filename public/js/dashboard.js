@@ -193,7 +193,7 @@ function updateDeficitDisplay() {
   if (deficitGoal > 0) {
     // With deficit goal: progressive green → orange → red between goal and maintenance
     const goalPct = (goalTarget / maintenance) * 100;
-    goalCursor.style.display = '';
+    goalCursor.style.display = 'block';
     goalCursor.style.left = `${goalPct}%`;
 
     if (pct > 100) {
