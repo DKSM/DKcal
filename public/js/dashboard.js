@@ -23,6 +23,7 @@ export async function initDashboard() {
   bindWeightInput();
   bindActionButtons();
   bindProfileButton();
+  bindDeficitHelp();
   await loadProfile();
   await loadDay(currentDate);
 }
@@ -82,6 +83,76 @@ function bindActionButtons() {
 function bindProfileButton() {
   $('#btn-profile').addEventListener('click', () => {
     openProfileModal(() => renderDay());
+  });
+}
+
+function bindDeficitHelp() {
+  $('#deficit-display').addEventListener('click', (e) => {
+    // Don't trigger if clicking the "Configurer profil" hint link
+    if (e.target.closest('.deficit-hint')) return;
+    showDeficitHelpPopup();
+  });
+  $('#deficit-display').style.cursor = 'pointer';
+}
+
+function showDeficitHelpPopup() {
+  const profile = getProfile();
+  const maintenance = profile.maintenanceCalories;
+  const deficitPct = profile.deficitPct != null ? profile.deficitPct : 100;
+  const goalTarget = deficitPct < 100 ? Math.round(maintenance * deficitPct / 100) : 0;
+
+  const overlay = createElement('div', { className: 'hint-popup-overlay' });
+  const popup = createElement('div', { className: 'hint-popup' });
+
+  let content = `
+    <h3>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      Comprendre la jauge
+    </h3>
+    <p>La barre montre ta <strong>consommation du jour</strong> par rapport à ton <strong>maintien calorique</strong> (${maintenance ? maintenance + '\u00a0kcal' : 'non configuré'}).</p>`;
+
+  if (maintenance && deficitPct < 100) {
+    content += `
+    <p>Tu as un <strong>objectif de déficit à ${deficitPct}\u00a0%</strong>, soit <strong>${goalTarget}\u00a0kcal/jour</strong>.</p>
+    <div class="hint-example">
+      <strong style="color: var(--success)">Vert</strong> \u2014 Tu es sous ton objectif. Le texte affiche le <strong>reste</strong> avant d'atteindre ta cible.<br><br>
+      <strong style="color: #FB8C00">Orange \u2192 Rouge</strong> \u2014 Tu as dépassé ton objectif mais tu es encore sous le maintien. Le texte affiche <strong>obj +X</strong>. Ce n'est pas dramatique\u00a0: tu restes en déficit.<br><br>
+      <strong style="color: var(--danger)">Rouge clignotant</strong> \u2014 Tu as dépassé le maintien. Le texte affiche <strong>+X</strong> au-dessus du maintien.
+    </div>
+    <p>Le curseur blanc <strong>|</strong> sur la barre marque la position de ton objectif (${deficitPct}\u00a0%).</p>`;
+  } else if (maintenance) {
+    content += `
+    <div class="hint-example">
+      <strong style="color: var(--success)">Vert</strong> \u2014 Tu es sous 75\u00a0% du maintien.<br><br>
+      <strong style="color: #FB8C00">Orange</strong> \u2014 Tu approches du maintien (75-100\u00a0%).<br><br>
+      <strong style="color: var(--danger)">Rouge</strong> \u2014 Tu as dépassé le maintien.
+    </div>
+    <p class="hint-note">Tu peux définir un objectif de déficit dans ton <strong>Profil</strong> pour activer le suivi du reste de calories.</p>`;
+  } else {
+    content += `
+    <p class="hint-note">Configure ton profil (sexe, âge, poids, taille, activité) pour activer la jauge.</p>`;
+  }
+
+  popup.innerHTML = content;
+
+  const closeBtn = createElement('button', {
+    className: 'hint-close',
+    textContent: 'Compris',
+    onClick: () => {
+      overlay.classList.remove('active');
+      setTimeout(() => overlay.remove(), 200);
+    },
+  });
+  popup.appendChild(closeBtn);
+  overlay.appendChild(popup);
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add('active'));
+
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      overlay.classList.remove('active');
+      setTimeout(() => overlay.remove(), 200);
+    }
   });
 }
 
@@ -234,10 +305,23 @@ function updateDeficitDisplay() {
     }
   }
 
-  const diff = consumed - maintenance;
-  const sign = diff > 0 ? '+' : '\u2212';
-  const diffClass = diff > 0 ? 'deficit-remaining over' : 'deficit-remaining';
-  deficitText.innerHTML = `${consumed} / ${maintenance} kcal <span class="${diffClass}">(${sign}${Math.abs(diff)})</span>`;
+  if (deficitPct < 100 && goalTarget) {
+    if (consumed <= goalTarget) {
+      const remaining = goalTarget - consumed;
+      deficitText.innerHTML = `${consumed} / ${maintenance} kcal <span class="deficit-remaining">(reste ${remaining})</span>`;
+    } else if (consumed <= maintenance) {
+      const overGoal = consumed - goalTarget;
+      deficitText.innerHTML = `${consumed} / ${maintenance} kcal <span class="deficit-remaining over">(obj +${overGoal})</span>`;
+    } else {
+      const over = consumed - maintenance;
+      deficitText.innerHTML = `${consumed} / ${maintenance} kcal <span class="deficit-remaining over">(+${over})</span>`;
+    }
+  } else {
+    const diff = consumed - maintenance;
+    const sign = diff > 0 ? '+' : '\u2212';
+    const diffClass = diff > 0 ? 'deficit-remaining over' : 'deficit-remaining';
+    deficitText.innerHTML = `${consumed} / ${maintenance} kcal <span class="${diffClass}">(${sign}${Math.abs(diff)})</span>`;
+  }
 }
 
 function editTempEntry(entry) {
