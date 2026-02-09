@@ -6,7 +6,7 @@
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding-top: 60px;
+  padding-top: 36px;
   z-index: 100;
   opacity: 0;
   pointer-events: none;
@@ -21,7 +21,7 @@
 .modal {
   width: 100%;
   max-width: var(--modal-max-width);
-  max-height: calc(100vh - 100px);
+  max-height: calc(100vh - 60px);
   background: var(--bg-card-solid);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
@@ -47,7 +47,7 @@
 }
 
 .modal-header {
-  padding: var(--sp-lg) var(--sp-lg);
+  padding: var(--sp-md) var(--sp-lg);
   border-bottom: 1px solid var(--border);
   display: flex;
   justify-content: space-between;

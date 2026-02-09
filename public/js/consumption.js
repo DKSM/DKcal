@@ -18,23 +18,20 @@ export function openAddConsumption(dateStr, onDone) {
     });
     const resultsDiv = createElement('div', { className: 'search-results' });
     resultsDiv.style.display = 'none';
-    searchGroup.appendChild(createElement('label', { textContent: 'Aliment' }));
     searchGroup.appendChild(searchInput);
     searchGroup.appendChild(resultsDiv);
     body.appendChild(searchGroup);
 
     // All items list
     const suggestionsDiv = createElement('div', { className: 'form-group' });
-    const suggestionsLabel = createElement('label', { textContent: 'Tous les aliments' });
     const suggestionsList = createElement('div', { className: 'search-results' });
-    suggestionsDiv.appendChild(suggestionsLabel);
     suggestionsDiv.appendChild(suggestionsList);
     body.appendChild(suggestionsDiv);
 
     // Temporary item button
     const tempBtn = createElement('button', {
       className: 'btn btn-secondary',
-      style: 'width: 100%; margin-bottom: 12px;',
+      style: 'width: 100%; margin-bottom: 4px;',
       textContent: '+ Aliment temporaire',
       onClick: () => {
         openTempItemForm(dateStr, () => {
@@ -147,11 +144,9 @@ export function openAddConsumption(dateStr, onDone) {
       for (const item of items) {
         const computed = item.computed || {};
         const kcalStr = computed.kcal != null ? `${adjustCal(Math.round(computed.kcal))} kcal` : '';
-        const freqStr = item.frequency ? `${item.frequency}x` : '';
-        const detailParts = [kcalStr, freqStr].filter(Boolean).join(' · ');
         const el = createElement('div', { className: 'search-result-item', onClick: () => selectItem(item) }, [
-          createElement('div', { className: 'result-name', textContent: item.name }),
-          createElement('div', { className: 'result-detail', textContent: detailParts }),
+          createElement('span', { className: 'result-name', textContent: item.name }),
+          createElement('span', { className: 'result-detail', textContent: kcalStr }),
         ]);
         container.appendChild(el);
       }
