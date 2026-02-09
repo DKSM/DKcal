@@ -69,7 +69,7 @@ export function openItemsModal(onDone) {
   });
 }
 
-function showHintPopup() {
+export function showHintPopup() {
   const overlay = createElement('div', { className: 'hint-popup-overlay' });
   const popup = createElement('div', { className: 'hint-popup' });
 

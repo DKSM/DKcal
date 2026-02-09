@@ -25,7 +25,7 @@ async function estimateNutrition(description, unit = '100g', name = '') {
     body: JSON.stringify({
       model: 'compound-beta',
       messages: [
-        { role: 'system', content: 'Tu es un nutritionniste. Si c\'est un produit de marque, recherche les valeurs exactes sur le site du fabricant ou une base nutritionnelle. Réponds UNIQUEMENT avec {"kcal":X,"protein":X,"fat":X,"carbs":X} — rien d\'autre.' },
+        { role: 'system', content: 'Tu es un nutritionniste. Règles strictes :\n- Si un aliment est décrit comme "cuit" ou "cuite", utilise les valeurs nutritionnelles APRÈS cuisson (les pâtes cuites font ~130 kcal/100g, pas 350).\n- Si c\'est un produit de marque, recherche les valeurs exactes sur le site du fabricant ou une base nutritionnelle.\n- Additionne les valeurs de chaque ingrédient séparément.\n- Vérifie la cohérence : kcal ≈ protein×4 + fat×9 + carbs×4.\nRéponds UNIQUEMENT avec {"kcal":X,"protein":X,"fat":X,"carbs":X} — rien d\'autre.' },
         { role: 'user', content: prompt },
       ],
       temperature: 0.1,

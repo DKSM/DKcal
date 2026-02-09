@@ -1,7 +1,7 @@
 import { createElement, debounce, showToast } from './utils.js';
 import { api } from './api.js';
 import { openModal } from './modal.js';
-import { openItemForm } from './items.js';
+import { openItemForm, showHintPopup } from './items.js';
 import { adjustCal } from './profile.js';
 
 export function openAddConsumption(dateStr, onDone) {
@@ -201,12 +201,22 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
     // Name
     const nameGroup = createElement('div', { className: 'form-group' });
     nameGroup.appendChild(createElement('label', { textContent: 'Nom' }));
+    const nameWrap = createElement('div', { className: 'name-input-wrap' });
     const nameInput = createElement('input', {
       className: 'input',
       value: existingEntry?.itemName || '',
       placeholder: 'Ex : Plat du restaurant, Snack...',
     });
-    nameGroup.appendChild(nameInput);
+    const hintBulb = createElement('button', {
+      type: 'button',
+      className: 'hint-bulb',
+      title: 'Astuce IA',
+      innerHTML: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 014 12.7V17a1 1 0 01-1 1H9a1 1 0 01-1-1v-2.3A7 7 0 0112 2z"/></svg>',
+      onClick: () => showHintPopup(),
+    });
+    nameWrap.appendChild(nameInput);
+    nameWrap.appendChild(hintBulb);
+    nameGroup.appendChild(nameWrap);
     body.appendChild(nameGroup);
 
     // Description for AI
