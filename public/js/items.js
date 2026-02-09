@@ -3,6 +3,39 @@ import { api } from './api.js';
 import { openModal, closeModal } from './modal.js';
 import { adjustCal } from './profile.js';
 
+export const LOADING_PHRASES = [
+  'Je mets l\'eau à bouillir...',
+  'Je cherche les ingrédients...',
+  'Je goûte pour vérifier...',
+  'Je regarde l\'étiquette...',
+  'Je pèse tout ça...',
+  'Un peu de sel, un peu de math...',
+  'Je consulte mes notes...',
+  'Je fais chauffer la calculatrice...',
+  'Je compte les calories une par une...',
+  'Je demande au chef...',
+  'Analyse en cuisine...',
+  'Je mélange les chiffres...',
+  'C\'est presque prêt...',
+  'Je vérifie la recette...',
+  'Laisse-moi réfléchir...',
+  'J\'épluche les données...',
+  'Je touille les macros...',
+  'Patience, ça mijote...',
+  'Je sors la balance...',
+  'Conversion en cours...',
+  'Je lis les petits caractères...',
+  'Un soupçon de protéines...',
+  'Je fais les comptes...',
+  'Hmm, intéressant...',
+  'Je dose les lipides...',
+  'Calcul au gramme près...',
+  'J\'analyse la composition...',
+  'Je fouille dans ma base...',
+  'Ça sent bon les données...',
+  'Encore un petit instant...',
+];
+
 export function openItemsModal(onDone) {
   openModal('Aliments', (body, handle) => {
     let allItems = [];
@@ -179,35 +212,40 @@ export function openItemForm(existingItem, onSaved) {
     const panelContainer = createElement('div');
     body.appendChild(panelContainer);
 
-    // AI estimate — inline
-    const estimateRow = createElement('div', {
-      style: 'margin-bottom: 12px; display: flex; align-items: center; gap: 8px;',
-    });
+    // AI estimate
     let pendingEstimate = null;
+    let phraseInterval = null;
 
     const estimateBtn = createElement('button', {
       className: 'btn btn-secondary btn-sm',
-      textContent: 'Estimer (IA)',
-      style: 'width: 100%; transition: width 0.2s;',
+      textContent: 'Estimation avec l\'IA',
+      style: 'width: 100%;',
       onClick: () => doEstimate(),
     });
 
-    const estimateResult = createElement('div', {
-      style: 'display: none; flex: 1; display: flex; align-items: center; gap: 6px; min-width: 0;',
-    });
-
+    const estimateRow = createElement('div', { style: 'margin-bottom: 12px;' });
     estimateRow.appendChild(estimateBtn);
-    estimateRow.appendChild(estimateResult);
     body.insertBefore(estimateRow, panelContainer);
+
+    const estimateResultRow = createElement('div', {
+      style: 'display: none; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; padding: 8px 12px; background: var(--bg-primary); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);',
+    });
+    body.insertBefore(estimateResultRow, panelContainer);
 
     function resetEstimate() {
       pendingEstimate = null;
-      estimateResult.style.display = 'none';
-      estimateBtn.style.width = '100%';
-      estimateBtn.style.flex = '';
+      if (phraseInterval) { clearInterval(phraseInterval); phraseInterval = null; }
+      estimateResultRow.style.display = 'none';
       estimateBtn.classList.remove('btn-loading');
-      estimateBtn.textContent = 'Estimer (IA)';
+      estimateBtn.textContent = 'Estimation avec l\'IA';
       estimateBtn.disabled = false;
+    }
+
+    function startLoadingPhrases() {
+      estimateBtn.textContent = LOADING_PHRASES[Math.floor(Math.random() * LOADING_PHRASES.length)];
+      phraseInterval = setInterval(() => {
+        estimateBtn.textContent = LOADING_PHRASES[Math.floor(Math.random() * LOADING_PHRASES.length)];
+      }, 2500);
     }
 
     async function doEstimate() {
@@ -217,8 +255,8 @@ export function openItemForm(existingItem, onSaved) {
 
       const unit = currentTab === 'per_unit' ? 'portion' : currentTab === 'per_100ml' ? '100ml' : '100g';
       estimateBtn.disabled = true;
-      estimateBtn.textContent = 'Estimation';
       estimateBtn.classList.add('btn-loading');
+      startLoadingPhrases();
 
       try {
         const params = new URLSearchParams({ unit });
@@ -228,32 +266,31 @@ export function openItemForm(existingItem, onSaved) {
         const result = await api.get(url);
         pendingEstimate = result;
 
-        // Shrink button, show result
-        estimateBtn.style.width = 'auto';
-        estimateBtn.style.flex = 'none';
+        clearInterval(phraseInterval);
+        phraseInterval = null;
         estimateBtn.classList.remove('btn-loading');
-        estimateBtn.textContent = 'Estimer (IA)';
+        estimateBtn.textContent = 'Estimation avec l\'IA';
         estimateBtn.disabled = false;
 
-        estimateResult.innerHTML = '';
-        estimateResult.style.display = 'flex';
-        estimateResult.appendChild(createElement('span', {
+        estimateResultRow.innerHTML = '';
+        estimateResultRow.style.display = 'flex';
+        estimateResultRow.appendChild(createElement('span', {
           style: 'font-size: 0.8rem; font-weight: 600; color: var(--accent); white-space: nowrap;',
           textContent: `${result.kcal} kcal`,
         }));
-        estimateResult.appendChild(createElement('span', {
+        estimateResultRow.appendChild(createElement('span', {
           style: 'font-size: 0.8rem; white-space: nowrap;',
-          innerHTML: `<b style="color:var(--protein-color)">Protéines</b><span style="color:var(--text-secondary)"> ${result.protein}</span>`,
+          innerHTML: `<b style="color:var(--protein-color)">P</b><span style="color:var(--text-secondary)"> ${result.protein}</span>`,
         }));
-        estimateResult.appendChild(createElement('span', {
+        estimateResultRow.appendChild(createElement('span', {
           style: 'font-size: 0.8rem; white-space: nowrap;',
-          innerHTML: `<b style="color:var(--warning)">Lipides</b><span style="color:var(--text-secondary)"> ${result.fat}</span>`,
+          innerHTML: `<b style="color:var(--warning)">L</b><span style="color:var(--text-secondary)"> ${result.fat}</span>`,
         }));
-        estimateResult.appendChild(createElement('span', {
+        estimateResultRow.appendChild(createElement('span', {
           style: 'font-size: 0.8rem; white-space: nowrap;',
-          innerHTML: `<b style="color:var(--success)">Glucides</b><span style="color:var(--text-secondary)"> ${result.carbs}</span>`,
+          innerHTML: `<b style="color:var(--success)">G</b><span style="color:var(--text-secondary)"> ${result.carbs}</span>`,
         }));
-        estimateResult.appendChild(createElement('button', {
+        estimateResultRow.appendChild(createElement('button', {
           className: 'btn btn-sm',
           style: 'background: var(--success); color: #fff; border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; flex: none;',
           textContent: '\u2713',
@@ -272,11 +309,11 @@ export function openItemForm(existingItem, onSaved) {
             showToast('Valeurs appliquées');
           },
         }));
-        estimateResult.appendChild(createElement('button', {
+        estimateResultRow.appendChild(createElement('button', {
           className: 'btn btn-sm',
           style: 'background: var(--accent); color: #fff; border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; flex: none;',
           textContent: '\u270e',
-          title: 'Compléter uniquement les champs vides ou à zéro, sans modifier les valeurs existantes',
+          title: 'Compléter uniquement les champs vides ou à zéro',
           onClick: () => {
             const suffix = currentTab === 'per_unit' ? '-unit' : '-100';
             const kcalInput = panelContainer.querySelector(`#item-kcal${suffix}`);
@@ -292,7 +329,7 @@ export function openItemForm(existingItem, onSaved) {
             showToast(count > 0 ? `${count} valeur${count > 1 ? 's' : ''} complétée${count > 1 ? 's' : ''}` : 'Rien à compléter');
           },
         }));
-        estimateResult.appendChild(createElement('button', {
+        estimateResultRow.appendChild(createElement('button', {
           className: 'btn btn-sm',
           style: 'background: var(--danger); color: #fff; border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; flex: none;',
           textContent: '\u2717',

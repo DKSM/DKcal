@@ -1,7 +1,7 @@
 import { createElement, debounce, showToast } from './utils.js';
 import { api } from './api.js';
 import { openModal } from './modal.js';
-import { openItemForm, showHintPopup } from './items.js';
+import { openItemForm, showHintPopup, LOADING_PHRASES } from './items.js';
 import { adjustCal } from './profile.js';
 
 export function openAddConsumption(dateStr, onDone) {
@@ -233,13 +233,12 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
     body.appendChild(descGroup);
 
     // AI estimate row
-    const estimateRow = createElement('div', {
-      style: 'margin-bottom: 12px; display: flex; align-items: center; gap: 8px;',
-    });
+    let phraseInterval = null;
+    const estimateRow = createElement('div', { style: 'margin-bottom: 12px;' });
 
     const estimateBtn = createElement('button', {
       className: 'btn btn-secondary btn-sm',
-      textContent: 'Estimer (IA)',
+      textContent: 'Estimation avec l\'IA',
       style: 'width: 100%;',
       onClick: () => doEstimate(),
     });
@@ -303,14 +302,28 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
     }
 
     // AI estimate logic
+    function startLoadingPhrases() {
+      estimateBtn.textContent = LOADING_PHRASES[Math.floor(Math.random() * LOADING_PHRASES.length)];
+      phraseInterval = setInterval(() => {
+        estimateBtn.textContent = LOADING_PHRASES[Math.floor(Math.random() * LOADING_PHRASES.length)];
+      }, 2500);
+    }
+
+    function stopLoading() {
+      if (phraseInterval) { clearInterval(phraseInterval); phraseInterval = null; }
+      estimateBtn.classList.remove('btn-loading');
+      estimateBtn.textContent = 'Estimation avec l\'IA';
+      estimateBtn.disabled = false;
+    }
+
     async function doEstimate() {
       const desc = descInput.value.trim();
       const text = nameInput.value.trim();
       if (!desc && !text) { showToast('Remplis au moins le nom ou la description', true); return; }
 
       estimateBtn.disabled = true;
-      estimateBtn.textContent = 'Estimation';
       estimateBtn.classList.add('btn-loading');
+      startLoadingPhrases();
 
       try {
         const params = new URLSearchParams({ unit: 'portion' });
@@ -324,15 +337,11 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
         if (result.fat != null) fatInput.value = result.fat;
         if (result.carbs != null) carbsInput.value = result.carbs;
 
-        estimateBtn.classList.remove('btn-loading');
-        estimateBtn.textContent = 'Estimer (IA)';
-        estimateBtn.disabled = false;
+        stopLoading();
         showToast('Valeurs estimées par l\'IA');
       } catch (err) {
         showToast(err.message, true);
-        estimateBtn.classList.remove('btn-loading');
-        estimateBtn.textContent = 'Estimer (IA)';
-        estimateBtn.disabled = false;
+        stopLoading();
       }
     }
 

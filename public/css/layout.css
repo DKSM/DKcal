@@ -669,37 +669,6 @@ body::before {
   opacity: 0.3;
 }
 
-/* ========================================
-   FOOTER BAR
-   ======================================== */
-.footer-bar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--sp-xl);
-  padding: var(--sp-sm) var(--sp-lg);
-  border-top: 1px solid var(--border);
-  background: var(--bg-primary);
-  flex-shrink: 0;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
-
-.footer-stat {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.footer-stat .dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--success);
-}
-
-.footer-stat .dot.orange { background: var(--accent); }
-.footer-stat .dot.blue { background: var(--protein-color); }
 
 /* ========================================
    RESPONSIVE MOBILE (max-width: 768px)
@@ -830,11 +799,6 @@ body::before {
     max-height: calc(100vh - var(--navbar-height) - 240px);
   }
 
-  /* Footer */
-  .footer-bar {
-    gap: var(--sp-md);
-    font-size: 0.7rem;
-  }
 }
 
 /* ========================================
@@ -1008,10 +972,4 @@ body::before {
     font-size: 0.85rem;
   }
 
-  /* --- FOOTER --- */
-  .footer-bar {
-    gap: var(--sp-sm);
-    padding: var(--sp-xs) var(--sp-sm);
-    font-size: 0.65rem;
-  }
 }
