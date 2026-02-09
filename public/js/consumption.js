@@ -230,6 +230,7 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
 
     // AI estimate row
     let phraseInterval = null;
+    let pendingEstimate = null;
     const estimateRow = createElement('div', { style: 'margin-bottom: 12px;' });
 
     const estimateBtn = createElement('button', {
@@ -240,6 +241,11 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
     });
     estimateRow.appendChild(estimateBtn);
     body.appendChild(estimateRow);
+
+    const estimateResultRow = createElement('div', {
+      style: 'display: none; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; padding: 8px 12px; background: var(--bg-primary); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);',
+    });
+    body.appendChild(estimateResultRow);
 
     // Nutrition fields
     const row1 = createElement('div', { className: 'form-row' });
@@ -305,14 +311,16 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
       }, 2000);
     }
 
-    function stopLoading() {
+    function resetEstimate() {
+      pendingEstimate = null;
       if (phraseInterval) { clearInterval(phraseInterval); phraseInterval = null; }
+      estimateResultRow.style.display = 'none';
       estimateBtn.classList.remove('btn-loading');
       estimateBtn.textContent = 'Estimation avec l\'IA';
       estimateBtn.disabled = false;
     }
 
-    handle.onClose = stopLoading;
+    handle.onClose = resetEstimate;
 
     async function doEstimate() {
       const desc = descInput.value.trim();
@@ -329,17 +337,71 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
         if (text) params.set('q', text);
         let url = `/api/estimate?${params}`;
         const result = await api.get(url);
+        pendingEstimate = result;
 
-        kcalInput.value = result.kcal;
-        if (result.protein != null) protInput.value = result.protein;
-        if (result.fat != null) fatInput.value = result.fat;
-        if (result.carbs != null) carbsInput.value = result.carbs;
+        clearInterval(phraseInterval);
+        phraseInterval = null;
+        estimateBtn.classList.remove('btn-loading');
+        estimateBtn.textContent = 'Estimation avec l\'IA';
+        estimateBtn.disabled = false;
 
-        stopLoading();
-        showToast('Valeurs estimées par l\'IA');
+        estimateResultRow.innerHTML = '';
+        estimateResultRow.style.display = 'flex';
+        estimateResultRow.appendChild(createElement('span', {
+          style: 'font-size: 0.8rem; font-weight: 600; color: var(--accent); white-space: nowrap;',
+          textContent: `${result.kcal} kcal`,
+        }));
+        estimateResultRow.appendChild(createElement('span', {
+          style: 'font-size: 0.8rem; white-space: nowrap;',
+          innerHTML: `<b style="color:var(--protein-color)">P:</b><span style="color:var(--text-secondary)"> ${result.protein}</span>`,
+        }));
+        estimateResultRow.appendChild(createElement('span', {
+          style: 'font-size: 0.8rem; white-space: nowrap;',
+          innerHTML: `<b style="color:var(--warning)">L:</b><span style="color:var(--text-secondary)"> ${result.fat}</span>`,
+        }));
+        estimateResultRow.appendChild(createElement('span', {
+          style: 'font-size: 0.8rem; white-space: nowrap;',
+          innerHTML: `<b style="color:var(--success)">G:</b><span style="color:var(--text-secondary)"> ${result.carbs}</span>`,
+        }));
+        estimateResultRow.appendChild(createElement('button', {
+          className: 'btn btn-sm',
+          style: 'background: var(--success); color: #fff; border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; flex: none;',
+          textContent: '\u2713',
+          title: 'Remplacer toutes les valeurs',
+          onClick: () => {
+            kcalInput.value = result.kcal;
+            if (result.protein != null) protInput.value = result.protein;
+            if (result.fat != null) fatInput.value = result.fat;
+            if (result.carbs != null) carbsInput.value = result.carbs;
+            resetEstimate();
+            showToast('Valeurs appliquées');
+          },
+        }));
+        estimateResultRow.appendChild(createElement('button', {
+          className: 'btn btn-sm',
+          style: 'background: var(--accent); color: #fff; border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; flex: none;',
+          textContent: '\u270e',
+          title: 'Compléter uniquement les champs vides ou à zéro',
+          onClick: () => {
+            let count = 0;
+            if ((!kcalInput.value || parseFloat(kcalInput.value) === 0)) { kcalInput.value = result.kcal; count++; }
+            if ((!protInput.value || parseFloat(protInput.value) === 0) && result.protein != null) { protInput.value = result.protein; count++; }
+            if ((!fatInput.value || parseFloat(fatInput.value) === 0) && result.fat != null) { fatInput.value = result.fat; count++; }
+            if ((!carbsInput.value || parseFloat(carbsInput.value) === 0) && result.carbs != null) { carbsInput.value = result.carbs; count++; }
+            resetEstimate();
+            showToast(count > 0 ? `${count} valeur${count > 1 ? 's' : ''} complétée${count > 1 ? 's' : ''}` : 'Rien à compléter');
+          },
+        }));
+        estimateResultRow.appendChild(createElement('button', {
+          className: 'btn btn-sm',
+          style: 'background: var(--danger); color: #fff; border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; flex: none;',
+          textContent: '\u2717',
+          title: 'Annuler l\'estimation',
+          onClick: () => resetEstimate(),
+        }));
       } catch (err) {
         showToast(err.message, true);
-        stopLoading();
+        resetEstimate();
       }
     }
 
