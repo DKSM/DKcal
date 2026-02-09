@@ -58,6 +58,7 @@ router.put('/day/:date', async (req, res, next) => {
           itemId: null,
           temporary: true,
           itemName: e.itemName || 'Temporaire',
+          description: e.description || '',
           qty,
           unitType: e.unitType || 'unit',
           time: e.time || new Date().toTimeString().slice(0, 5),

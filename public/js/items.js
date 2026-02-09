@@ -205,6 +205,7 @@ export function openItemForm(existingItem, onSaved) {
       estimateResult.style.display = 'none';
       estimateBtn.style.width = '100%';
       estimateBtn.style.flex = '';
+      estimateBtn.classList.remove('btn-loading');
       estimateBtn.textContent = 'Estimer (IA)';
       estimateBtn.disabled = false;
     }
@@ -216,7 +217,8 @@ export function openItemForm(existingItem, onSaved) {
 
       const unit = currentTab === 'per_unit' ? 'portion' : currentTab === 'per_100ml' ? '100ml' : '100g';
       estimateBtn.disabled = true;
-      estimateBtn.textContent = '...';
+      estimateBtn.textContent = 'Estimation';
+      estimateBtn.classList.add('btn-loading');
 
       try {
         const params = new URLSearchParams({ unit });
@@ -229,6 +231,7 @@ export function openItemForm(existingItem, onSaved) {
         // Shrink button, show result
         estimateBtn.style.width = 'auto';
         estimateBtn.style.flex = 'none';
+        estimateBtn.classList.remove('btn-loading');
         estimateBtn.textContent = 'Estimer (IA)';
         estimateBtn.disabled = false;
 

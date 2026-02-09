@@ -224,7 +224,7 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
     descGroup.appendChild(createElement('label', { textContent: 'Description pour l\'IA (optionnel)' }));
     const descInput = createElement('textarea', {
       className: 'input',
-      value: '',
+      value: existingEntry?.description || '',
       placeholder: 'Ex : steak haché 150g, frites maison, salade verte...',
       rows: '2',
       style: 'resize: vertical; min-height: 42px;',
@@ -309,7 +309,8 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
       if (!desc && !text) { showToast('Remplis au moins le nom ou la description', true); return; }
 
       estimateBtn.disabled = true;
-      estimateBtn.textContent = '...';
+      estimateBtn.textContent = 'Estimation';
+      estimateBtn.classList.add('btn-loading');
 
       try {
         const params = new URLSearchParams({ unit: 'portion' });
@@ -323,11 +324,13 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
         if (result.fat != null) fatInput.value = result.fat;
         if (result.carbs != null) carbsInput.value = result.carbs;
 
+        estimateBtn.classList.remove('btn-loading');
         estimateBtn.textContent = 'Estimer (IA)';
         estimateBtn.disabled = false;
         showToast('Valeurs estimées par l\'IA');
       } catch (err) {
         showToast(err.message, true);
+        estimateBtn.classList.remove('btn-loading');
         estimateBtn.textContent = 'Estimer (IA)';
         estimateBtn.disabled = false;
       }
@@ -351,6 +354,7 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
               updateEntry: {
                 id: existingEntry.id,
                 itemName,
+                description: descInput.value.trim(),
                 kcal,
                 protein,
                 fat,
@@ -365,6 +369,7 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
               addEntry: {
                 temporary: true,
                 itemName,
+                description: descInput.value.trim(),
                 qty,
                 unitType,
                 kcal,
