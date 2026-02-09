@@ -23,12 +23,12 @@ export function adjustCal(val) {
 }
 
 // Mifflin-St Jeor BMR calculation
-function calculateBMR(sex, age, weight) {
-  if (!sex || !age || !weight) return null;
+function calculateBMR(sex, age, weight, height) {
+  if (!sex || !age || !weight || !height) return null;
   if (sex === 'male') {
-    return Math.round(10 * weight + 6.25 * 175 - 5 * age + 5);
+    return Math.round(10 * weight + 6.25 * height - 5 * age + 5);
   } else {
-    return Math.round(10 * weight + 6.25 * 163 - 5 * age - 161);
+    return Math.round(10 * weight + 6.25 * height - 5 * age - 161);
   }
 }
 
@@ -90,7 +90,7 @@ export function openProfileModal(onSaved) {
     sexGroup.appendChild(sexTabs);
     body.appendChild(sexGroup);
 
-    // Age + Weight row
+    // Age + Height + Weight row
     const row1 = createElement('div', { className: 'form-row' });
     const ageGroup = createElement('div', { className: 'form-group' });
     ageGroup.appendChild(createElement('label', { textContent: 'Age' }));
@@ -101,6 +101,16 @@ export function openProfileModal(onSaved) {
     ageInput.addEventListener('input', () => autoFillBMR());
     ageGroup.appendChild(ageInput);
     row1.appendChild(ageGroup);
+
+    const heightGroup = createElement('div', { className: 'form-group' });
+    heightGroup.appendChild(createElement('label', { textContent: 'Taille (cm)' }));
+    const heightInput = createElement('input', {
+      className: 'input', type: 'number', min: '50', max: '250', step: '1',
+      placeholder: 'Taille', value: profile.height || '',
+    });
+    heightInput.addEventListener('input', () => autoFillBMR());
+    heightGroup.appendChild(heightInput);
+    row1.appendChild(heightGroup);
 
     const weightGroup = createElement('div', { className: 'form-group' });
     weightGroup.appendChild(createElement('label', { textContent: 'Poids (kg)' }));
@@ -166,7 +176,7 @@ export function openProfileModal(onSaved) {
     body.appendChild(maintenanceGroup);
 
     function autoFillBMR() {
-      const bmr = calculateBMR(selectedSex, parseInt(ageInput.value), parseFloat(weightInput.value));
+      const bmr = calculateBMR(selectedSex, parseInt(ageInput.value), parseFloat(weightInput.value), parseInt(heightInput.value));
       if (bmr) {
         bmrInput.value = bmr;
       }
@@ -215,6 +225,7 @@ export function openProfileModal(onSaved) {
         const payload = {
           sex: selectedSex,
           age: ageInput.value ? parseInt(ageInput.value) : null,
+          height: heightInput.value ? parseInt(heightInput.value) : null,
           weight: weightInput.value ? parseFloat(weightInput.value) : null,
           bmr,
           activityMode,

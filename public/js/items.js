@@ -241,6 +241,8 @@ export function openItemForm(existingItem, onSaved) {
       estimateBtn.disabled = false;
     }
 
+    handle.onClose = resetEstimate;
+
     function startLoadingPhrases() {
       estimateBtn.textContent = LOADING_PHRASES[Math.floor(Math.random() * LOADING_PHRASES.length)];
       phraseInterval = setInterval(() => {

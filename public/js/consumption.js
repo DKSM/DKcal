@@ -73,7 +73,8 @@ export function openAddConsumption(dateStr, onDone) {
       textContent: 'Ajouter',
       style: 'width: 100%; margin-top: 12px;',
       onClick: async () => {
-        if (!selectedItem || !qtyInput.value) return;
+        if (!selectedItem) { showToast('Sélectionne un aliment', true); return; }
+        if (!qtyInput.value) { showToast('Indique une quantité', true); return; }
         try {
           await api.put(`/api/day/${dateStr}`, {
             addEntry: {
@@ -315,6 +316,8 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
       estimateBtn.textContent = 'Estimation avec l\'IA';
       estimateBtn.disabled = false;
     }
+
+    handle.onClose = stopLoading;
 
     async function doEstimate() {
       const desc = descInput.value.trim();

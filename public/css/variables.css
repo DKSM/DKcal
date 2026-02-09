@@ -19,7 +19,7 @@
   /* Text */
   --text-primary: #e4e8f0;
   --text-secondary: #828da8;
-  --text-muted: #505a74;
+  --text-muted: #6b7694;
   --text-bright: #ffffff;
 
   /* Orange accent system */
@@ -76,6 +76,9 @@
 
   /* Navbar */
   --navbar-height: 54px;
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
 
   /* Modal */
   --modal-max-width: 560px;

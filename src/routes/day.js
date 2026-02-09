@@ -62,10 +62,10 @@ router.put('/day/:date', async (req, res, next) => {
           qty,
           unitType: e.unitType || 'unit',
           time: e.time || new Date().toTimeString().slice(0, 5),
-          kcal: Math.round((e.kcal || 0) * qty * 100) / 100,
-          protein: Math.round((e.protein || 0) * qty * 100) / 100,
-          fat: Math.round((e.fat || 0) * qty * 100) / 100,
-          carbs: Math.round((e.carbs || 0) * qty * 100) / 100,
+          kcal: Math.round(Math.max(0, e.kcal || 0) * qty * 100) / 100,
+          protein: Math.round(Math.max(0, e.protein || 0) * qty * 100) / 100,
+          fat: Math.round(Math.max(0, e.fat || 0) * qty * 100) / 100,
+          carbs: Math.round(Math.max(0, e.carbs || 0) * qty * 100) / 100,
         });
       } else {
         if (!e.itemId || typeof e.qty !== 'number' || !['g', 'ml', 'unit'].includes(e.unitType)) {
@@ -91,7 +91,12 @@ router.put('/day/:date', async (req, res, next) => {
       const u = req.body.updateEntry;
       const idx = existing.entries.findIndex(e => e.id === u.id);
       if (idx !== -1) {
-        existing.entries[idx] = { ...existing.entries[idx], ...u };
+        const allowed = ['itemName', 'description', 'qty', 'unitType', 'time', 'kcal', 'protein', 'fat', 'carbs'];
+        const filtered = {};
+        for (const key of allowed) {
+          if (u[key] !== undefined) filtered[key] = u[key];
+        }
+        existing.entries[idx] = { ...existing.entries[idx], ...filtered };
       }
     }
 

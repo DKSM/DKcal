@@ -54,10 +54,6 @@ export function debounce(fn, ms) {
   };
 }
 
-export function round2(n) {
-  return Math.round(n * 100) / 100;
-}
-
 export function showToast(message, isError = false) {
   const existing = document.querySelector('.toast');
   if (existing) existing.remove();

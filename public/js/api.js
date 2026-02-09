@@ -15,8 +15,17 @@ export async function apiFetch(url, options = {}) {
   }
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-    throw new Error(err.error || `HTTP ${res.status}`);
+    const defaultMessages = {
+      400: 'Requête invalide',
+      401: 'Session expirée, reconnectez-vous',
+      403: 'Accès interdit',
+      404: 'Ressource introuvable',
+      500: 'Erreur serveur',
+      502: 'Service temporairement indisponible',
+      503: 'Service indisponible',
+    };
+    const err = await res.json().catch(() => ({ error: defaultMessages[res.status] || `Erreur HTTP ${res.status}` }));
+    throw new Error(err.error || defaultMessages[res.status] || `Erreur HTTP ${res.status}`);
   }
 
   return res.json();
