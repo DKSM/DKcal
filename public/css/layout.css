@@ -837,13 +837,40 @@ body::before {
 
   /* --- NAVBAR --- */
   .navbar {
-    padding: 0 var(--sp-xs);
+    flex-wrap: wrap;
+    padding: var(--sp-xs) var(--sp-xs);
     gap: var(--sp-xs);
-    height: 48px;
+    height: auto;
+    min-height: 48px;
   }
 
   .navbar-center {
-    display: none;
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    padding-top: 2px;
+  }
+
+  .navbar-center .deficit-display {
+    width: 100%;
+    justify-content: center;
+    padding: 4px 8px;
+    gap: 6px;
+    background: transparent;
+    border: none;
+    border-top: 1px solid var(--border);
+    border-radius: 0;
+    margin: 0 calc(-1 * var(--sp-xs));
+    padding-left: var(--sp-xs);
+    padding-right: var(--sp-xs);
+  }
+
+  .navbar-center .deficit-bar-wrap {
+    width: 100px;
+  }
+
+  .navbar-center .deficit-text {
+    font-size: 0.68rem;
   }
 
   .navbar-left {
@@ -926,7 +953,6 @@ body::before {
 
   .card-weight .weight-input-wrap input {
     font-size: 1.5rem;
-    width: 90px;
   }
 
   /* --- ENTRY ITEMS --- */
