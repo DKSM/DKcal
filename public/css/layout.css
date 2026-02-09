@@ -509,11 +509,19 @@ body::before {
   font-weight: 700;
   font-family: var(--font-mono);
   color: var(--weight-color);
-  width: 120px;
+  width: 2ch;
+  min-width: 2ch;
   padding: 0;
   line-height: 1;
   height: 2rem;
   outline: none;
+  -moz-appearance: textfield;
+}
+
+.card-weight .weight-input-wrap input::-webkit-outer-spin-button,
+.card-weight .weight-input-wrap input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .card-weight .weight-input-wrap input::placeholder {

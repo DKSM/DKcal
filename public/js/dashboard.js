@@ -36,10 +36,17 @@ function bindDateNav() {
   });
 }
 
+function autoSizeWeightInput(input) {
+  const len = (input.value || input.placeholder).length;
+  input.style.width = Math.max(2, len) + 'ch';
+}
+
 function bindWeightInput() {
   const input = $('#weight-input');
+  autoSizeWeightInput(input);
   let saveTimer;
   input.addEventListener('input', () => {
+    autoSizeWeightInput(input);
     clearTimeout(saveTimer);
     saveTimer = setTimeout(async () => {
       const val = input.value ? parseFloat(input.value) : null;
@@ -100,6 +107,7 @@ function renderDay() {
   // Weight
   const weightInput = $('#weight-input');
   weightInput.value = currentDay.weight || '';
+  autoSizeWeightInput(weightInput);
 
   // Entry count badge
   const countEl = $('#entry-count');
