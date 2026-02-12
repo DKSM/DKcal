@@ -55,7 +55,7 @@
 
 .estimate-btn-camera {
   flex: none;
-  width: 42px;
+  width: 52px;
   padding: 0;
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
@@ -67,6 +67,8 @@
 
 .estimate-btn-camera svg {
   pointer-events: none;
+  width: 60%;
+  height: 60%;
 }
 
 .btn-danger {
