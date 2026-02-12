@@ -65,10 +65,14 @@ async function computeStats(userId = 'default', fromDate, toDate) {
     }
   }
 
-  const nonZeroKcal = kcalValues.filter(v => v > 0);
-  const nonZeroProtein = proteinValues.filter(v => v > 0);
-  const nonZeroFat = fatValues.filter(v => v > 0);
-  const nonZeroCarbs = carbsValues.filter(v => v > 0);
+  // Exclude today from averages (partial day skews stats)
+  const today = new Date().toISOString().slice(0, 10);
+  const todayIdx = dates.indexOf(today);
+
+  const nonZeroKcal = kcalValues.filter((v, i) => v > 0 && i !== todayIdx);
+  const nonZeroProtein = proteinValues.filter((v, i) => v > 0 && i !== todayIdx);
+  const nonZeroFat = fatValues.filter((v, i) => v > 0 && i !== todayIdx);
+  const nonZeroCarbs = carbsValues.filter((v, i) => v > 0 && i !== todayIdx);
   const nonNullWeight = weightValues.filter(v => v != null);
 
   return {
@@ -102,7 +106,7 @@ async function computeStats(userId = 'default', fromDate, toDate) {
       minWeight: nonNullWeight.length > 0 ? Math.min(...nonNullWeight) : null,
       maxWeight: nonNullWeight.length > 0 ? Math.max(...nonNullWeight) : null,
       weightDelta: nonNullWeight.length >= 2 ? Math.round((nonNullWeight[nonNullWeight.length - 1] - nonNullWeight[0]) * 10) / 10 : null,
-      daysTracked: nonZeroKcal.length,
+      daysTracked: nonZeroKcal.length + (todayIdx !== -1 && kcalValues[todayIdx] > 0 ? 1 : 0),
     },
   };
 }
