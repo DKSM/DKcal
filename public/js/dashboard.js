@@ -391,6 +391,46 @@ function editEntryQty(entry) {
     qtyRow.appendChild(unitSelect);
     body.appendChild(qtyRow);
 
+    // Live macro preview
+    const previewRow = createElement('div', {
+      style: 'display: none; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; padding: 8px 12px; background: var(--bg-primary); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); font-size: 0.8rem;',
+    });
+    body.appendChild(previewRow);
+
+    const origQty = entry.qty || 1;
+    function updatePreview() {
+      const newQty = parseFloat(qtyInput.value) || 0;
+      if (newQty <= 0 || entry.kcal == null) { previewRow.style.display = 'none'; return; }
+      const ratio = newQty / origQty;
+      const kcal = Math.round((entry.kcal || 0) * ratio);
+      const protein = entry.protein != null ? Math.round(entry.protein * ratio * 10) / 10 : null;
+      const fat = entry.fat != null ? Math.round(entry.fat * ratio * 10) / 10 : null;
+      const carbs = entry.carbs != null ? Math.round(entry.carbs * ratio * 10) / 10 : null;
+
+      previewRow.innerHTML = '';
+      previewRow.style.display = 'flex';
+      previewRow.appendChild(createElement('span', {
+        style: 'font-weight: 600; color: var(--accent); white-space: nowrap;',
+        textContent: `${adjustCal(kcal)} kcal`,
+      }));
+      if (protein != null) previewRow.appendChild(createElement('span', {
+        style: 'white-space: nowrap;',
+        innerHTML: `<b style="color:var(--protein-color)">Prot:</b> <span style="color:var(--text-secondary)">${protein}g</span>`,
+      }));
+      if (fat != null) previewRow.appendChild(createElement('span', {
+        style: 'white-space: nowrap;',
+        innerHTML: `<b style="color:var(--warning)">Lip:</b> <span style="color:var(--text-secondary)">${fat}g</span>`,
+      }));
+      if (carbs != null) previewRow.appendChild(createElement('span', {
+        style: 'white-space: nowrap;',
+        innerHTML: `<b style="color:var(--success)">Gluc:</b> <span style="color:var(--text-secondary)">${carbs}g</span>`,
+      }));
+    }
+
+    qtyInput.addEventListener('input', updatePreview);
+    unitSelect.addEventListener('change', updatePreview);
+    updatePreview();
+
     body.appendChild(createElement('button', {
       className: 'btn btn-primary',
       textContent: 'Enregistrer',
