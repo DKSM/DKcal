@@ -44,6 +44,15 @@ router.put('/day/:date', async (req, res, next) => {
     // Update weight if provided
     if (req.body.weight !== undefined) {
       existing.weight = req.body.weight;
+
+      // Sync weight to profile if different
+      if (req.body.weight != null) {
+        const profile = await storage.readProfile(userId);
+        if (profile.weight !== req.body.weight) {
+          profile.weight = req.body.weight;
+          await storage.writeProfile(userId, profile);
+        }
+      }
     }
 
     // Add a single entry
