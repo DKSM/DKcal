@@ -65,6 +65,48 @@ export function openAddConsumption(dateStr, onDone) {
     qtyForm.appendChild(selectedLabel);
     qtyForm.appendChild(qtyRow);
 
+    // Live macro preview
+    const previewRow = createElement('div', {
+      style: 'display: none; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; padding: 8px 12px; background: var(--bg-primary); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); font-size: 0.8rem;',
+    });
+    qtyForm.appendChild(previewRow);
+
+    function updatePreview() {
+      if (!selectedItem) { previewRow.style.display = 'none'; return; }
+      const computed = selectedItem.computed || {};
+      if (computed.kcal == null) { previewRow.style.display = 'none'; return; }
+
+      const qty = parseFloat(qtyInput.value) || 0;
+      const factor = selectedItem.mode === 'per_100' ? qty / 100 : qty;
+
+      const kcal = Math.round(computed.kcal * factor);
+      const protein = computed.protein != null ? Math.round(computed.protein * factor * 10) / 10 : null;
+      const fat = computed.fat != null ? Math.round(computed.fat * factor * 10) / 10 : null;
+      const carbs = computed.carbs != null ? Math.round(computed.carbs * factor * 10) / 10 : null;
+
+      previewRow.innerHTML = '';
+      previewRow.style.display = 'flex';
+      previewRow.appendChild(createElement('span', {
+        style: 'font-weight: 600; color: var(--accent); white-space: nowrap;',
+        textContent: `${adjustCal(kcal)} kcal`,
+      }));
+      if (protein != null) previewRow.appendChild(createElement('span', {
+        style: 'white-space: nowrap;',
+        innerHTML: `<b style="color:var(--protein-color)">Prot:</b> <span style="color:var(--text-secondary)">${protein}g</span>`,
+      }));
+      if (fat != null) previewRow.appendChild(createElement('span', {
+        style: 'white-space: nowrap;',
+        innerHTML: `<b style="color:var(--warning)">Lip:</b> <span style="color:var(--text-secondary)">${fat}g</span>`,
+      }));
+      if (carbs != null) previewRow.appendChild(createElement('span', {
+        style: 'white-space: nowrap;',
+        innerHTML: `<b style="color:var(--success)">Gluc:</b> <span style="color:var(--text-secondary)">${carbs}g</span>`,
+      }));
+    }
+
+    qtyInput.addEventListener('input', updatePreview);
+    unitSelect.addEventListener('change', updatePreview);
+
     const addBtn = createElement('button', {
       className: 'btn btn-primary',
       textContent: 'Ajouter',
@@ -116,6 +158,7 @@ export function openAddConsumption(dateStr, onDone) {
       }
       qtyInput.focus();
       qtyInput.select();
+      updatePreview();
     }
 
     function renderResults(items, container, query) {
@@ -230,7 +273,6 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
 
     // AI estimate row
     let phraseInterval = null;
-    let pendingEstimate = null;
     const estimateRow = createElement('div', { style: 'margin-bottom: 12px;' });
 
     const estimateBtn = createElement('button', {
@@ -312,7 +354,6 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
     }
 
     function resetEstimate() {
-      pendingEstimate = null;
       if (phraseInterval) { clearInterval(phraseInterval); phraseInterval = null; }
       estimateResultRow.style.display = 'none';
       estimateBtn.classList.remove('btn-loading');
@@ -337,7 +378,6 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
         if (text) params.set('q', text);
         let url = `/api/estimate?${params}`;
         const result = await api.get(url);
-        pendingEstimate = result;
 
         clearInterval(phraseInterval);
         phraseInterval = null;

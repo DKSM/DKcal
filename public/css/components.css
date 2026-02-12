@@ -441,7 +441,7 @@ select.input {
    SEARCH RESULTS
    ======================================== */
 .search-results {
-  max-height: 50vh;
+  max-height: 40vh;
   overflow-y: auto;
   background: var(--bg-primary);
   border: 1px solid var(--glass-border);
