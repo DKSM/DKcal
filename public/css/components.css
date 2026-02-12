@@ -40,6 +40,35 @@
   border-color: var(--glass-border-hover);
 }
 
+/* Split button: estimation text + camera */
+.estimate-btn-group {
+  display: flex;
+  width: 100%;
+}
+
+.estimate-btn-text {
+  flex: 1;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  min-width: 0;
+}
+
+.estimate-btn-camera {
+  flex: none;
+  width: 42px;
+  padding: 0;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left: 1px solid var(--border-subtle);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.estimate-btn-camera svg {
+  pointer-events: none;
+}
+
 .btn-danger {
   background: rgba(255, 71, 87, 0.12);
   color: var(--danger);

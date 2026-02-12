@@ -1,4 +1,4 @@
-import { createElement, debounce, showToast } from './utils.js';
+import { createElement, debounce, showToast, compressImage } from './utils.js';
 import { api } from './api.js';
 import { openModal } from './modal.js';
 import { openItemForm, showHintPopup, LOADING_PHRASES } from './items.js';
@@ -273,15 +273,30 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
 
     // AI estimate row
     let phraseInterval = null;
-    const estimateRow = createElement('div', { style: 'margin-bottom: 12px;' });
 
     const estimateBtn = createElement('button', {
-      className: 'btn btn-secondary btn-sm',
+      className: 'btn btn-secondary btn-sm estimate-btn-text',
       textContent: 'Estimation avec l\'IA',
-      style: 'width: 100%;',
       onClick: () => doEstimate(),
     });
+
+    const fileInput = createElement('input', { type: 'file', accept: 'image/*', style: 'display: none;' });
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files[0]) doEstimateImage(fileInput.files[0]);
+      fileInput.value = '';
+    });
+
+    const cameraBtn = createElement('button', {
+      className: 'btn btn-secondary btn-sm estimate-btn-camera',
+      innerHTML: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+      title: 'Estimer depuis une photo',
+      onClick: () => fileInput.click(),
+    });
+
+    const estimateRow = createElement('div', { className: 'estimate-btn-group', style: 'margin-bottom: 12px;' });
     estimateRow.appendChild(estimateBtn);
+    estimateRow.appendChild(cameraBtn);
+    estimateRow.appendChild(fileInput);
     body.appendChild(estimateRow);
 
     const estimateResultRow = createElement('div', {
@@ -363,6 +378,71 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
 
     handle.onClose = resetEstimate;
 
+    function showEstimateResult(result) {
+      clearInterval(phraseInterval);
+      phraseInterval = null;
+      estimateBtn.classList.remove('btn-loading');
+      estimateBtn.textContent = 'Estimation avec l\'IA';
+      estimateBtn.disabled = false;
+
+      estimateResultRow.innerHTML = '';
+      estimateResultRow.style.display = 'flex';
+      estimateResultRow.appendChild(createElement('span', {
+        style: 'font-size: 0.8rem; font-weight: 600; color: var(--accent); white-space: nowrap;',
+        textContent: `${result.kcal} kcal`,
+      }));
+      estimateResultRow.appendChild(createElement('span', {
+        style: 'font-size: 0.8rem; white-space: nowrap;',
+        innerHTML: `<b style="color:var(--protein-color)">Protéines :</b><span style="color:var(--text-secondary)"> ${result.protein}</span>`,
+      }));
+      estimateResultRow.appendChild(createElement('span', {
+        style: 'font-size: 0.8rem; white-space: nowrap;',
+        innerHTML: `<b style="color:var(--warning)">Lipides :</b><span style="color:var(--text-secondary)"> ${result.fat}</span>`,
+      }));
+      estimateResultRow.appendChild(createElement('span', {
+        style: 'font-size: 0.8rem; white-space: nowrap;',
+        innerHTML: `<b style="color:var(--success)">Glucides :</b><span style="color:var(--text-secondary)"> ${result.carbs}</span>`,
+      }));
+      const actionBtns = createElement('div', { style: 'margin-left: auto; display: flex; gap: 6px; flex-shrink: 0;' });
+      actionBtns.appendChild(createElement('button', {
+        className: 'btn btn-sm',
+        style: 'background: var(--success); color: #fff; border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;',
+        textContent: '\u2713',
+        title: 'Remplacer toutes les valeurs',
+        onClick: () => {
+          kcalInput.value = result.kcal;
+          if (result.protein != null) protInput.value = result.protein;
+          if (result.fat != null) fatInput.value = result.fat;
+          if (result.carbs != null) carbsInput.value = result.carbs;
+          resetEstimate();
+          showToast('Valeurs appliquées');
+        },
+      }));
+      actionBtns.appendChild(createElement('button', {
+        className: 'btn btn-sm',
+        style: 'background: var(--accent); color: #fff; border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;',
+        textContent: '\u270e',
+        title: 'Compléter uniquement les champs vides ou à zéro',
+        onClick: () => {
+          let count = 0;
+          if ((!kcalInput.value || parseFloat(kcalInput.value) === 0)) { kcalInput.value = result.kcal; count++; }
+          if ((!protInput.value || parseFloat(protInput.value) === 0) && result.protein != null) { protInput.value = result.protein; count++; }
+          if ((!fatInput.value || parseFloat(fatInput.value) === 0) && result.fat != null) { fatInput.value = result.fat; count++; }
+          if ((!carbsInput.value || parseFloat(carbsInput.value) === 0) && result.carbs != null) { carbsInput.value = result.carbs; count++; }
+          resetEstimate();
+          showToast(count > 0 ? `${count} valeur${count > 1 ? 's' : ''} complétée${count > 1 ? 's' : ''}` : 'Rien à compléter');
+        },
+      }));
+      actionBtns.appendChild(createElement('button', {
+        className: 'btn btn-sm',
+        style: 'background: var(--danger); color: #fff; border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;',
+        textContent: '\u2717',
+        title: 'Annuler l\'estimation',
+        onClick: () => resetEstimate(),
+      }));
+      estimateResultRow.appendChild(actionBtns);
+    }
+
     async function doEstimate() {
       const desc = descInput.value.trim();
       const text = nameInput.value.trim();
@@ -376,71 +456,23 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
         const params = new URLSearchParams({ unit: 'portion' });
         if (desc) params.set('desc', desc);
         if (text) params.set('q', text);
-        let url = `/api/estimate?${params}`;
-        const result = await api.get(url);
+        const result = await api.get(`/api/estimate?${params}`);
+        showEstimateResult(result);
+      } catch (err) {
+        showToast(err.message, true);
+        resetEstimate();
+      }
+    }
 
-        clearInterval(phraseInterval);
-        phraseInterval = null;
-        estimateBtn.classList.remove('btn-loading');
-        estimateBtn.textContent = 'Estimation avec l\'IA';
-        estimateBtn.disabled = false;
+    async function doEstimateImage(file) {
+      estimateBtn.disabled = true;
+      estimateBtn.classList.add('btn-loading');
+      startLoadingPhrases();
 
-        estimateResultRow.innerHTML = '';
-        estimateResultRow.style.display = 'flex';
-        estimateResultRow.appendChild(createElement('span', {
-          style: 'font-size: 0.8rem; font-weight: 600; color: var(--accent); white-space: nowrap;',
-          textContent: `${result.kcal} kcal`,
-        }));
-        estimateResultRow.appendChild(createElement('span', {
-          style: 'font-size: 0.8rem; white-space: nowrap;',
-          innerHTML: `<b style="color:var(--protein-color)">Protéines :</b><span style="color:var(--text-secondary)"> ${result.protein}</span>`,
-        }));
-        estimateResultRow.appendChild(createElement('span', {
-          style: 'font-size: 0.8rem; white-space: nowrap;',
-          innerHTML: `<b style="color:var(--warning)">Lipides :</b><span style="color:var(--text-secondary)"> ${result.fat}</span>`,
-        }));
-        estimateResultRow.appendChild(createElement('span', {
-          style: 'font-size: 0.8rem; white-space: nowrap;',
-          innerHTML: `<b style="color:var(--success)">Glucides :</b><span style="color:var(--text-secondary)"> ${result.carbs}</span>`,
-        }));
-        const btnGroup = createElement('div', { style: 'margin-left: auto; display: flex; gap: 6px; flex-shrink: 0;' });
-        btnGroup.appendChild(createElement('button', {
-          className: 'btn btn-sm',
-          style: 'background: var(--success); color: #fff; border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;',
-          textContent: '\u2713',
-          title: 'Remplacer toutes les valeurs',
-          onClick: () => {
-            kcalInput.value = result.kcal;
-            if (result.protein != null) protInput.value = result.protein;
-            if (result.fat != null) fatInput.value = result.fat;
-            if (result.carbs != null) carbsInput.value = result.carbs;
-            resetEstimate();
-            showToast('Valeurs appliquées');
-          },
-        }));
-        btnGroup.appendChild(createElement('button', {
-          className: 'btn btn-sm',
-          style: 'background: var(--accent); color: #fff; border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;',
-          textContent: '\u270e',
-          title: 'Compléter uniquement les champs vides ou à zéro',
-          onClick: () => {
-            let count = 0;
-            if ((!kcalInput.value || parseFloat(kcalInput.value) === 0)) { kcalInput.value = result.kcal; count++; }
-            if ((!protInput.value || parseFloat(protInput.value) === 0) && result.protein != null) { protInput.value = result.protein; count++; }
-            if ((!fatInput.value || parseFloat(fatInput.value) === 0) && result.fat != null) { fatInput.value = result.fat; count++; }
-            if ((!carbsInput.value || parseFloat(carbsInput.value) === 0) && result.carbs != null) { carbsInput.value = result.carbs; count++; }
-            resetEstimate();
-            showToast(count > 0 ? `${count} valeur${count > 1 ? 's' : ''} complétée${count > 1 ? 's' : ''}` : 'Rien à compléter');
-          },
-        }));
-        btnGroup.appendChild(createElement('button', {
-          className: 'btn btn-sm',
-          style: 'background: var(--danger); color: #fff; border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;',
-          textContent: '\u2717',
-          title: 'Annuler l\'estimation',
-          onClick: () => resetEstimate(),
-        }));
-        estimateResultRow.appendChild(btnGroup);
+      try {
+        const image = await compressImage(file);
+        const result = await api.post('/api/estimate-image', { image, unit: 'portion', name: nameInput.value.trim() });
+        showEstimateResult(result);
       } catch (err) {
         showToast(err.message, true);
         resetEstimate();

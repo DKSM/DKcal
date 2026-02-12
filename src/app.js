@@ -10,7 +10,7 @@ const itemsRoutes = require('./routes/items');
 const dayRoutes = require('./routes/day');
 const statsRoutes = require('./routes/stats');
 const profileRoutes = require('./routes/profile');
-const { estimateNutrition } = require('./services/estimator');
+const { estimateNutrition, estimateFromImage } = require('./services/estimator');
 
 const app = express();
 
@@ -62,6 +62,18 @@ app.get('/api/estimate', async (req, res, next) => {
     const primary = desc || q;
     const context = desc ? q : '';
     const result = await estimateNutrition(primary, unit, context);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// AI nutrition estimate from image
+app.post('/api/estimate-image', express.json({ limit: '5mb' }), async (req, res, next) => {
+  try {
+    const { image, unit, name } = req.body;
+    if (!image) return res.status(400).json({ error: 'Image requise' });
+    const result = await estimateFromImage(image, unit || '100g', name || '');
     res.json(result);
   } catch (err) {
     next(err);
