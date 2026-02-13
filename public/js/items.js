@@ -227,6 +227,7 @@ export function openItemForm(existingItem, onSaved) {
     // AI estimate
     let pendingEstimate = null;
     let phraseInterval = null;
+    let estimateContext = { messages: [] };
 
     const estimateBtn = createElement('button', {
       className: 'btn btn-secondary btn-sm estimate-btn-text',
@@ -276,8 +277,35 @@ export function openItemForm(existingItem, onSaved) {
       }, 2000);
     }
 
+    function applyEstimate(result) {
+      const suffix = currentTab === 'per_unit' ? '-unit' : '-100';
+      const ki = panelContainer.querySelector(`#item-kcal${suffix}`);
+      const pi = panelContainer.querySelector(`#item-protein${suffix}`);
+      const fi = panelContainer.querySelector(`#item-fat${suffix}`);
+      const ci = panelContainer.querySelector(`#item-carbs${suffix}`);
+      if (ki) ki.value = result.kcal;
+      if (pi && result.protein != null) pi.value = result.protein;
+      if (fi && result.fat != null) fi.value = result.fat;
+      if (ci && result.carbs != null) ci.value = result.carbs;
+      resetEstimate();
+      showToast('Valeurs appliquées');
+    }
+
     function showEstimateResult(result) {
       pendingEstimate = result;
+      // Build context for chat
+      const desc = descInput.value.trim();
+      const text = nameInput.value.trim();
+      const unit = currentTab === 'per_unit' ? 'portion' : currentTab === 'per_100ml' ? '100ml' : '100g';
+      const unitLabels = { '100g': 'pour 100g de', '100ml': 'pour 100ml de', 'portion': 'Donne les valeurs nutritionnelles de' };
+      const primary = desc || text;
+      const nameCtx = desc && text ? ` (produit : "${text}")` : '';
+      estimateContext = {
+        messages: [
+          { role: 'user', content: `${unitLabels[unit]} "${primary}"${nameCtx}` },
+          { role: 'assistant', content: JSON.stringify({ kcal: result.kcal, protein: result.protein, fat: result.fat, carbs: result.carbs, summary: result.summary, details: result.details }) },
+        ],
+      };
       clearInterval(phraseInterval);
       phraseInterval = null;
       estimateBtn.classList.remove('btn-loading');
@@ -308,19 +336,7 @@ export function openItemForm(existingItem, onSaved) {
         style: 'background: var(--success); color: #fff; border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;',
         textContent: '\u2713',
         title: 'Remplacer toutes les valeurs par celles de l\'IA',
-        onClick: () => {
-          const suffix = currentTab === 'per_unit' ? '-unit' : '-100';
-          const kcalInput = panelContainer.querySelector(`#item-kcal${suffix}`);
-          const protInput = panelContainer.querySelector(`#item-protein${suffix}`);
-          const fatInput = panelContainer.querySelector(`#item-fat${suffix}`);
-          const carbsInput = panelContainer.querySelector(`#item-carbs${suffix}`);
-          if (kcalInput) kcalInput.value = result.kcal;
-          if (protInput && result.protein != null) protInput.value = result.protein;
-          if (fatInput && result.fat != null) fatInput.value = result.fat;
-          if (carbsInput && result.carbs != null) carbsInput.value = result.carbs;
-          resetEstimate();
-          showToast('Valeurs appliquées');
-        },
+        onClick: () => applyEstimate(result),
       }));
       actionBtns.appendChild(createElement('button', {
         className: 'btn btn-sm',
@@ -350,6 +366,22 @@ export function openItemForm(existingItem, onSaved) {
         onClick: () => resetEstimate(),
       }));
       estimateResultRow.appendChild(actionBtns);
+      if (result.summary) {
+        const summaryWrap = createElement('div', {
+          className: 'estimate-summary-wrap',
+        });
+        const summaryText = createElement('span', {
+          className: 'estimate-summary-text',
+          textContent: result.summary,
+        });
+        summaryWrap.appendChild(summaryText);
+        summaryWrap.appendChild(createElement('span', {
+          className: 'estimate-see-more',
+          textContent: ' Voir plus',
+          onClick: () => showEstimateChat(estimateContext, applyEstimate),
+        }));
+        estimateResultRow.appendChild(summaryWrap);
+      }
     }
 
     async function doEstimate() {
@@ -651,4 +683,234 @@ export function openItemForm(existingItem, onSaved) {
     renderPanel();
     nameInput.focus();
   });
+}
+
+export function showEstimateChat(context, onApply) {
+  const overlay = createElement('div', { className: 'hint-popup-overlay' });
+  const popup = createElement('div', { className: 'hint-popup estimate-chat-popup' });
+
+  // Header with close X
+  const headerRow = createElement('div', { className: 'estimate-chat-header' });
+  headerRow.appendChild(createElement('h3', {
+    innerHTML: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg> Discussion avec l\'IA',
+  }));
+  headerRow.appendChild(createElement('button', {
+    className: 'estimate-chat-close',
+    innerHTML: '&times;',
+    onClick: () => closeChat(),
+  }));
+  popup.appendChild(headerRow);
+
+  const messagesDiv = createElement('div', { className: 'estimate-chat-messages' });
+  popup.appendChild(messagesDiv);
+
+  const messages = [...context.messages];
+  let sendCount = messages.slice(2).filter(m => m.role === 'user').length;
+  let selectedResult = null;
+  let selectedIdx = -1;
+
+  function closeChat() {
+    overlay.classList.remove('active');
+    setTimeout(() => overlay.remove(), 200);
+  }
+
+  function selectResult(parsed, idx) {
+    selectedResult = parsed;
+    selectedIdx = idx;
+    updateFooter();
+    messagesDiv.querySelectorAll('.estimate-chat-msg.selected').forEach(el => el.classList.remove('selected'));
+    const allMsgs = messagesDiv.querySelectorAll('.estimate-chat-msg');
+    const domIdx = idx - 1;
+    if (allMsgs[domIdx]) allMsgs[domIdx].classList.add('selected');
+  }
+
+  // Footer with selected values + Valider
+  const footerDiv = createElement('div', { className: 'estimate-chat-footer' });
+  footerDiv.style.display = 'none';
+
+  function updateFooter() {
+    if (!selectedResult) { footerDiv.style.display = 'none'; return; }
+    footerDiv.innerHTML = '';
+    footerDiv.style.display = 'flex';
+    const macros = createElement('div', { className: 'estimate-chat-footer-macros' });
+    macros.innerHTML = `<span style="color:var(--accent);font-weight:700">${selectedResult.kcal} kcal</span> · <span style="color:var(--protein-color)">P: ${selectedResult.protein}g</span> · <span style="color:var(--warning)">L: ${selectedResult.fat}g</span> · <span style="color:var(--success)">G: ${selectedResult.carbs}g</span>`;
+    footerDiv.appendChild(macros);
+    footerDiv.appendChild(createElement('button', {
+      className: 'btn btn-primary btn-sm',
+      textContent: 'Valider',
+      onClick: () => { onApply(selectedResult); closeChat(); },
+    }));
+  }
+
+  function formatPlainText(text) {
+    // Escape HTML, then apply simple markdown formatting
+    const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return escaped
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/^- (.+)$/gm, '<span class="chat-list-item">$1</span>')
+      .replace(/\n/g, '<br>')
+      .replace(/(https?:\/\/[^\s<,)]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+  }
+
+  function renderMessages() {
+    messagesDiv.innerHTML = '';
+
+    for (let i = 1; i < messages.length; i++) {
+      const msg = messages[i];
+      const msgDiv = createElement('div', {
+        className: `estimate-chat-msg ${msg.role}${i === selectedIdx ? ' selected' : ''}`,
+      });
+
+      if (msg.role === 'assistant') {
+        let parsed;
+        try { parsed = JSON.parse(msg.content); } catch { parsed = null; }
+
+        if (parsed && parsed.kcal != null) {
+          const macroLine = createElement('div', { className: 'estimate-chat-macros' });
+          macroLine.innerHTML = `<span style="color:var(--accent);font-weight:700">${parsed.kcal} kcal</span> · <span style="color:var(--protein-color)">P: ${parsed.protein}g</span> · <span style="color:var(--warning)">L: ${parsed.fat}g</span> · <span style="color:var(--success)">G: ${parsed.carbs}g</span>`;
+          msgDiv.appendChild(macroLine);
+
+          if (parsed.summary) {
+            msgDiv.appendChild(createElement('div', {
+              className: 'estimate-chat-summary',
+              textContent: parsed.summary,
+            }));
+          }
+
+          if (parsed.details) {
+            const detailsEl = createElement('div', { className: 'estimate-chat-details' });
+            detailsEl.innerHTML = formatPlainText(parsed.details);
+            msgDiv.appendChild(detailsEl);
+          }
+
+          const idx = i;
+          msgDiv.appendChild(createElement('button', {
+            className: 'btn btn-sm estimate-chat-apply',
+            textContent: `Appliquer ${parsed.kcal} kcal`,
+            onClick: () => selectResult(parsed, idx),
+          }));
+        } else {
+          // Plain text response (explanation, detail, etc.)
+          const textEl = createElement('div', { className: 'estimate-chat-text' });
+          textEl.innerHTML = formatPlainText(msg.content);
+          msgDiv.appendChild(textEl);
+        }
+      } else {
+        msgDiv.appendChild(createElement('span', { textContent: msg.content }));
+      }
+
+      messagesDiv.appendChild(msgDiv);
+    }
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+
+  renderMessages();
+
+  // Input row
+  const inputRow = createElement('div', { className: 'estimate-chat-input-row' });
+  const chatInput = createElement('input', {
+    className: 'input',
+    placeholder: 'Corriger ou préciser...',
+    type: 'text',
+  });
+  const sendBtn = createElement('button', {
+    className: 'btn btn-primary btn-sm',
+    textContent: 'Envoyer',
+    onClick: () => sendMessage(),
+  });
+  inputRow.appendChild(chatInput);
+  inputRow.appendChild(sendBtn);
+  popup.appendChild(inputRow);
+
+  const limitInfo = createElement('div', {
+    className: 'estimate-chat-limit',
+    textContent: `${sendCount}/50 messages`,
+  });
+  popup.appendChild(limitInfo);
+
+  popup.appendChild(footerDiv);
+
+  async function sendMessage() {
+    const text = chatInput.value.trim();
+    if (!text) return;
+    if (sendCount >= 50) {
+      showToast('Limite de 50 messages atteinte', true);
+      return;
+    }
+
+    messages.push({ role: 'user', content: text });
+    sendCount++;
+    chatInput.value = '';
+    renderMessages();
+
+    // Loading indicator
+    const loadingDiv = createElement('div', {
+      className: 'estimate-chat-msg assistant estimate-chat-loading',
+      innerHTML: '<div class="typing-dots"><span></span><span></span><span></span></div>',
+    });
+    messagesDiv.appendChild(loadingDiv);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+    chatInput.disabled = true;
+    sendBtn.disabled = true;
+
+    try {
+      const compressed = messages.map(m => {
+        if (m.role === 'assistant') {
+          try {
+            const p = JSON.parse(m.content);
+            if (p.details) {
+              const { details, ...rest } = p;
+              return { role: 'assistant', content: JSON.stringify(rest) };
+            }
+          } catch {}
+        }
+        return m;
+      });
+
+      const result = await api.post('/api/estimate-chat', { messages: compressed });
+      let responseContent;
+      if (result.text) {
+        // Plain text response (explanation, detail, question answer)
+        responseContent = result.text;
+      } else {
+        // JSON response with nutrition values
+        responseContent = JSON.stringify({
+          kcal: result.kcal, protein: result.protein,
+          fat: result.fat, carbs: result.carbs, summary: result.summary,
+          details: result.details,
+        });
+      }
+      messages.push({ role: 'assistant', content: responseContent });
+      context.messages = [...messages];
+      renderMessages();
+      limitInfo.textContent = `${sendCount}/50 messages`;
+    } catch (err) {
+      messages.pop();
+      sendCount--;
+      showToast(err.message, true);
+      renderMessages();
+    } finally {
+      chatInput.disabled = false;
+      sendBtn.disabled = false;
+      chatInput.focus();
+    }
+  }
+
+  chatInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  overlay.appendChild(popup);
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add('active'));
+
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeChat();
+  });
+
+  chatInput.focus();
 }

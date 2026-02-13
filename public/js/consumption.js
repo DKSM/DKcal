@@ -1,7 +1,7 @@
 import { createElement, debounce, showToast, compressImage } from './utils.js';
 import { api } from './api.js';
 import { openModal } from './modal.js';
-import { openItemForm, showHintPopup, LOADING_PHRASES } from './items.js';
+import { openItemForm, showHintPopup, showEstimateChat, LOADING_PHRASES } from './items.js';
 import { adjustCal } from './profile.js';
 
 export function openAddConsumption(dateStr, onDone) {
@@ -273,6 +273,7 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
 
     // AI estimate row
     let phraseInterval = null;
+    let estimateContext = { messages: [] };
 
     const estimateBtn = createElement('button', {
       className: 'btn btn-secondary btn-sm estimate-btn-text',
@@ -379,6 +380,17 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
     handle.onClose = resetEstimate;
 
     function showEstimateResult(result) {
+      // Build context for chat
+      const desc = descInput.value.trim();
+      const text = nameInput.value.trim();
+      const primary = desc || text;
+      const nameCtx = desc && text ? ` (produit : "${text}")` : '';
+      estimateContext = {
+        messages: [
+          { role: 'user', content: `Donne les valeurs nutritionnelles de "${primary}"${nameCtx}` },
+          { role: 'assistant', content: JSON.stringify({ kcal: result.kcal, protein: result.protein, fat: result.fat, carbs: result.carbs, summary: result.summary, details: result.details }) },
+        ],
+      };
       clearInterval(phraseInterval);
       phraseInterval = null;
       estimateBtn.classList.remove('btn-loading');
@@ -441,6 +453,29 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
         onClick: () => resetEstimate(),
       }));
       estimateResultRow.appendChild(actionBtns);
+      if (result.summary) {
+        const summaryWrap = createElement('div', {
+          className: 'estimate-summary-wrap',
+        });
+        const summaryText = createElement('span', {
+          className: 'estimate-summary-text',
+          textContent: result.summary,
+        });
+        summaryWrap.appendChild(summaryText);
+        summaryWrap.appendChild(createElement('span', {
+          className: 'estimate-see-more',
+          textContent: ' Voir plus',
+          onClick: () => showEstimateChat(estimateContext, (r) => {
+            kcalInput.value = r.kcal;
+            if (r.protein != null) protInput.value = r.protein;
+            if (r.fat != null) fatInput.value = r.fat;
+            if (r.carbs != null) carbsInput.value = r.carbs;
+            resetEstimate();
+            showToast('Valeurs appliquées');
+          }),
+        }));
+        estimateResultRow.appendChild(summaryWrap);
+      }
     }
 
     async function doEstimate() {

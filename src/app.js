@@ -10,7 +10,7 @@ const itemsRoutes = require('./routes/items');
 const dayRoutes = require('./routes/day');
 const statsRoutes = require('./routes/stats');
 const profileRoutes = require('./routes/profile');
-const { estimateNutrition, estimateFromImage } = require('./services/estimator');
+const { estimateNutrition, estimateFromImage, estimateChat } = require('./services/estimator');
 
 const app = express();
 
@@ -74,6 +74,23 @@ app.post('/api/estimate-image', express.json({ limit: '5mb' }), async (req, res,
     const { image, unit, name } = req.body;
     if (!image) return res.status(400).json({ error: 'Image requise' });
     const result = await estimateFromImage(image, unit || '100g', name || '');
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// AI nutrition chat (follow-up corrections)
+app.post('/api/estimate-chat', async (req, res, next) => {
+  try {
+    const { messages } = req.body;
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      return res.status(400).json({ error: 'Messages requis' });
+    }
+    if (messages.length > 100) {
+      return res.status(400).json({ error: 'Trop de messages (max 100)' });
+    }
+    const result = await estimateChat(messages);
     res.json(result);
   } catch (err) {
     next(err);
