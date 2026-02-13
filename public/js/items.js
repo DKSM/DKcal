@@ -154,6 +154,18 @@ export function openItemForm(existingItem, onSaved) {
     let currentTab = existingTab;
     let components = existingItem?.components ? [...existingItem.components] : [];
 
+    // Resolve component names if missing
+    if (components.length > 0 && components.some(c => !c.itemName)) {
+      api.get('/api/items').then(items => {
+        const map = new Map(items.map(i => [i.id, i.name]));
+        for (const c of components) {
+          if (!c.itemName && map.has(c.itemId)) c.itemName = map.get(c.itemId);
+        }
+        const compsDiv = document.getElementById('components-list');
+        if (compsDiv) compsDiv.dispatchEvent(new Event('refresh'));
+      }).catch(() => {});
+    }
+
     // Name
     const nameGroup = createElement('div', { className: 'form-group' });
     nameGroup.appendChild(createElement('label', { textContent: 'Nom' }));
@@ -479,6 +491,7 @@ export function openItemForm(existingItem, onSaved) {
     function renderCompositePanel(container) {
       const compsDiv = createElement('div', { id: 'components-list' });
       container.appendChild(compsDiv);
+      compsDiv.addEventListener('refresh', () => renderComponents());
 
       function renderComponents() {
         compsDiv.innerHTML = '';
