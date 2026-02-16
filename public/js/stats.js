@@ -142,7 +142,7 @@ function renderCharts(container, stats) {
     const fPct = Math.round(fCal / totalMacroCal * 100);
     const cPct = 100 - pPct - fPct;
 
-    const donutWrapper = createElement('div', { className: 'chart-container' });
+    const donutWrapper = createElement('div', { className: 'chart-container chart-square' });
     donutWrapper.appendChild(createElement('div', { className: 'chart-title', textContent: 'Répartition macros (moy.)' }));
     const donutCanvas = createElement('canvas');
     donutWrapper.appendChild(donutCanvas);

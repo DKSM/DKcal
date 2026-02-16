@@ -21,6 +21,10 @@
   height: 260px !important;
 }
 
+.chart-container.chart-square canvas {
+  height: 340px !important;
+}
+
 .chart-title {
   font-size: 0.75rem;
   font-weight: 600;
