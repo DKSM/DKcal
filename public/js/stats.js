@@ -129,6 +129,59 @@ function renderCharts(container, stats) {
     ]));
   }
 
+  // Macro ratio donut chart
+  const avgP = stats.summary.avgProtein || 0;
+  const avgF = stats.summary.avgFat || 0;
+  const avgC = stats.summary.avgCarbs || 0;
+  const pCal = avgP * 4;
+  const fCal = avgF * 9;
+  const cCal = avgC * 4;
+  const totalMacroCal = pCal + fCal + cCal;
+  if (totalMacroCal > 0) {
+    const pPct = Math.round(pCal / totalMacroCal * 100);
+    const fPct = Math.round(fCal / totalMacroCal * 100);
+    const cPct = 100 - pPct - fPct;
+
+    const donutWrapper = createElement('div', { className: 'chart-container' });
+    donutWrapper.appendChild(createElement('div', { className: 'chart-title', textContent: 'Répartition macros (moy.)' }));
+    const donutCanvas = createElement('canvas');
+    donutWrapper.appendChild(donutCanvas);
+    container.appendChild(donutWrapper);
+
+    chartInstances.push(new Chart(donutCanvas, {
+      type: 'doughnut',
+      data: {
+        labels: [`Protéines ${pPct}%`, `Lipides ${fPct}%`, `Glucides ${cPct}%`],
+        datasets: [{
+          data: [pCal, fCal, cCal],
+          backgroundColor: ['rgba(52, 152, 219, 0.7)', 'rgba(241, 196, 15, 0.7)', 'rgba(46, 204, 113, 0.7)'],
+          borderColor: ['#3498db', '#f1c40f', '#2ecc71'],
+          borderWidth: 2,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '55%',
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { color: '#a0a0a0', font: { size: 11 }, padding: 12 },
+          },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const kcal = Math.round(ctx.raw);
+                const pct = Math.round(ctx.raw / totalMacroCal * 100);
+                return ` ${ctx.label.split(' ')[0]}: ${kcal} kcal (${pct}%)`;
+              },
+            },
+          },
+        },
+      },
+    }));
+  }
+
   // Weight chart (always shown for grid layout)
   const weightData = stats.weight.values;
   const weightDatasets = weightData.some(v => v != null) ? [
