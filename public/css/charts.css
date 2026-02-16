@@ -22,7 +22,7 @@
 }
 
 .chart-container.chart-square canvas {
-  height: 340px !important;
+  height: auto !important;
 }
 
 .chart-title {

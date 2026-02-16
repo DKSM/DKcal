@@ -161,7 +161,7 @@ function renderCharts(container, stats) {
       },
       options: {
         responsive: true,
-        maintainAspectRatio: false,
+        maintainAspectRatio: true,
         cutout: '55%',
         plugins: {
           legend: {
