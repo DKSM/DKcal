@@ -100,6 +100,18 @@ async function listDayDates(userId = 'default') {
   }
 }
 
+// Admins list
+async function readAdmins() {
+  const filePath = path.join(__dirname, '..', '..', 'data', 'admins.txt');
+  try {
+    const content = await fs.readFile(filePath, 'utf-8');
+    return content.split('\n').map(l => l.trim()).filter(Boolean);
+  } catch (err) {
+    if (err.code === 'ENOENT') return [];
+    throw err;
+  }
+}
+
 module.exports = {
   readJSON,
   writeJSON,
@@ -113,4 +125,5 @@ module.exports = {
   listDayDates,
   readAccounts,
   writeAccounts,
+  readAdmins,
 };

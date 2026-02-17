@@ -7,11 +7,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
   }
 
-  const authenticated = await checkAuth();
-  if (authenticated) {
+  const authData = await checkAuth();
+  if (authData) {
     $('#login-screen').style.display = 'none';
-    initDashboard();
+    initDashboard(authData);
   } else {
-    initAuth(() => initDashboard());
+    initAuth(() => initDashboard({}));
   }
 });

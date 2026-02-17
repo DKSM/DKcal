@@ -10,6 +10,7 @@ const itemsRoutes = require('./routes/items');
 const dayRoutes = require('./routes/day');
 const statsRoutes = require('./routes/stats');
 const profileRoutes = require('./routes/profile');
+const adminRoutes = require('./routes/admin');
 const { estimateNutrition, estimateFromImage, estimateChat } = require('./services/estimator');
 
 const app = express();
@@ -47,6 +48,7 @@ app.use('/api', authRoutes);
 app.use('/api', requireAuth);
 
 // Protected API routes
+app.use('/api', adminRoutes);
 app.use('/api', itemsRoutes);
 app.use('/api', dayRoutes);
 app.use('/api', statsRoutes);

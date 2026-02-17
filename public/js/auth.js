@@ -4,9 +4,10 @@ import { api } from './api.js';
 export async function checkAuth() {
   try {
     const data = await api.get('/api/me');
-    return data.authenticated;
+    if (data.authenticated) return data;
+    return null;
   } catch {
-    return false;
+    return null;
   }
 }
 

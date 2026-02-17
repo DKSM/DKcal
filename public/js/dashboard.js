@@ -7,6 +7,7 @@ import { loadProfile, getProfile, openProfileModal, adjustCal } from './profile.
 import { openModal } from './modal.js';
 import { logout } from './auth.js';
 import { initChangelog } from './changelog.js';
+import { initAdmin } from './admin.js';
 
 function displayUnit(unitType) {
   if (unitType === 'unit') return 'unité';
@@ -16,7 +17,7 @@ function displayUnit(unitType) {
 let currentDate = todayStr();
 let currentDay = null;
 
-export async function initDashboard() {
+export async function initDashboard(authData = {}) {
   const dashboard = $('#dashboard');
   dashboard.classList.add('active');
 
@@ -27,6 +28,7 @@ export async function initDashboard() {
   bindDeficitHelp();
   bindCheckAll();
   initChangelog();
+  initAdmin(authData);
   await loadProfile();
   await loadDay(currentDate);
 }
