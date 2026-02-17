@@ -843,6 +843,23 @@ select.input {
   border: 1px solid rgba(255, 140, 50, 0.15);
 }
 
+/* Composite mode hint */
+.composite-hint {
+  margin-bottom: var(--sp-md);
+  padding: var(--sp-sm) var(--sp-md);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-md);
+}
+
+.composite-hint p {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
 /* ========================================
    COMPOSITE COMPONENTS
    ======================================== */

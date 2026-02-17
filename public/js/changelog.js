@@ -5,6 +5,13 @@ import { openModal } from './modal.js';
 // tag: 'feature' or 'fix'
 const CHANGELOG = [
   {
+    version: 11,
+    date: '17 février 2026',
+    tag: 'fix',
+    title: 'Formulaire recette nettoyé',
+    description: 'En mode recette, les options d\'estimation IA (bouton, description, photo) sont maintenant masquées puisqu\'elles ne servent pas. Un texte explicatif les remplace.',
+  },
+  {
     version: 10,
     date: '17 février 2026',
     tag: 'fix',

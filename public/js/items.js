@@ -259,6 +259,14 @@ export function openItemForm(existingItem, onSaved) {
     });
     body.insertBefore(estimateResultRow, panelContainer);
 
+    // Composite mode hint (shown instead of AI elements)
+    const compositeHint = createElement('div', {
+      className: 'composite-hint',
+      style: 'display: none;',
+    });
+    compositeHint.innerHTML = '<p>Compose ta recette à partir des aliments que tu as déjà créés. Les calories et macros seront calculées automatiquement à partir des composants.</p>';
+    body.insertBefore(compositeHint, panelContainer);
+
     function resetEstimate() {
       pendingEstimate = null;
       if (phraseInterval) { clearInterval(phraseInterval); phraseInterval = null; }
@@ -428,6 +436,13 @@ export function openItemForm(existingItem, onSaved) {
         el.className = `tab${id === tab ? ' active' : ''}`;
       }
       resetEstimate();
+
+      const isComposite = tab === 'composite';
+      descGroup.style.display = isComposite ? 'none' : '';
+      estimateRow.style.display = isComposite ? 'none' : '';
+      compositeHint.style.display = isComposite ? '' : 'none';
+      hintBulb.style.display = isComposite ? 'none' : '';
+
       renderPanel();
     }
 
@@ -678,6 +693,14 @@ export function openItemForm(existingItem, onSaved) {
         },
       });
       body.appendChild(deleteBtn);
+    }
+
+    // Set initial visibility if opening in composite mode
+    if (currentTab === 'composite') {
+      descGroup.style.display = 'none';
+      estimateRow.style.display = 'none';
+      compositeHint.style.display = '';
+      hintBulb.style.display = 'none';
     }
 
     renderPanel();
