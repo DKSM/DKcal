@@ -407,8 +407,21 @@ function showEntryEditPopup(entry, buttonEl) {
 
   document.body.appendChild(popup);
   const rect = buttonEl.getBoundingClientRect();
-  popup.style.top = `${rect.bottom + 4}px`;
-  popup.style.right = `${window.innerWidth - rect.right}px`;
+  const popupRect = popup.getBoundingClientRect();
+  let top = rect.bottom + 4;
+  let right = window.innerWidth - rect.right;
+
+  // Keep popup within viewport
+  if (top + popupRect.height > window.innerHeight) {
+    top = rect.top - popupRect.height - 4;
+  }
+  if (right + popupRect.width > window.innerWidth) {
+    right = 8;
+  }
+  if (right < 8) right = 8;
+
+  popup.style.top = `${Math.max(8, top)}px`;
+  popup.style.right = `${right}px`;
 
   const closePopup = (e) => {
     if (!popup.contains(e.target) && e.target !== buttonEl) {

@@ -5,6 +5,13 @@ import { openModal } from './modal.js';
 // tag: 'feature' or 'fix'
 const CHANGELOG = [
   {
+    version: 10,
+    date: '17 février 2026',
+    tag: 'fix',
+    title: 'Layout mobile amélioré',
+    description: 'Le menu d\'édition (crayon) ne s\'affiche plus en dehors de l\'écran sur mobile. Les boutons d\'édition et de suppression sont aussi sur la même ligne que le nom, plus compact.',
+  },
+  {
     version: 9,
     date: '17 février 2026',
     tag: 'feature',
