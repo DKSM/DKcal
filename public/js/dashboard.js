@@ -6,6 +6,7 @@ import { openStatsModal } from './stats.js';
 import { loadProfile, getProfile, openProfileModal, adjustCal } from './profile.js';
 import { openModal } from './modal.js';
 import { logout } from './auth.js';
+import { initChangelog } from './changelog.js';
 
 function displayUnit(unitType) {
   if (unitType === 'unit') return 'unité';
@@ -25,6 +26,7 @@ export async function initDashboard() {
   bindProfileButton();
   bindDeficitHelp();
   bindCheckAll();
+  initChangelog();
   await loadProfile();
   await loadDay(currentDate);
 }
