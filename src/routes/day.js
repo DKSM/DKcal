@@ -102,7 +102,10 @@ router.put('/day/:date', async (req, res, next) => {
       if (idx !== -1) {
         const entry = existing.entries[idx];
 
-        if (entry.itemId && (u.qty !== undefined || u.unitType !== undefined)) {
+        // Toggle checked only (no other fields)
+        if (u.checked !== undefined && Object.keys(u).length === 2) {
+          existing.entries[idx] = { ...entry, checked: !!u.checked };
+        } else if (entry.itemId && (u.qty !== undefined || u.unitType !== undefined)) {
           // Non-temporary entry with qty/unit change: recalculate nutrition
           const newQty = u.qty !== undefined ? u.qty : entry.qty;
           const newUnit = u.unitType !== undefined ? u.unitType : entry.unitType;
@@ -112,6 +115,7 @@ router.put('/day/:date', async (req, res, next) => {
             qty: newQty,
             unitType: newUnit,
             time: u.time !== undefined ? u.time : entry.time,
+            checked: u.checked !== undefined ? !!u.checked : entry.checked,
             kcal: nutrition.kcal || 0,
             protein: nutrition.protein || 0,
             fat: nutrition.fat || 0,
@@ -119,7 +123,7 @@ router.put('/day/:date', async (req, res, next) => {
           };
         } else {
           // Temporary entry or no qty change: apply fields directly
-          const allowed = ['itemName', 'description', 'qty', 'unitType', 'time', 'kcal', 'protein', 'fat', 'carbs'];
+          const allowed = ['itemName', 'description', 'qty', 'unitType', 'time', 'kcal', 'protein', 'fat', 'carbs', 'checked'];
           const filtered = {};
           for (const key of allowed) {
             if (u[key] !== undefined) filtered[key] = u[key];
@@ -155,6 +159,14 @@ router.put('/day/:date', async (req, res, next) => {
         }
       }
       existing.entries = recomputed;
+    }
+
+    // Check/uncheck all entries
+    if (req.body.checkAll !== undefined) {
+      const val = !!req.body.checkAll;
+      for (const entry of existing.entries) {
+        entry.checked = val;
+      }
     }
 
     // Remove entry

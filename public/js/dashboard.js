@@ -24,6 +24,7 @@ export async function initDashboard() {
   bindActionButtons();
   bindProfileButton();
   bindDeficitHelp();
+  bindCheckAll();
   await loadProfile();
   await loadDay(currentDate);
 }
@@ -223,7 +224,23 @@ function renderDay() {
       }
     });
 
+    const checkbox = createElement('input', { type: 'checkbox', className: 'entry-checkbox' });
+    checkbox.checked = !!entry.checked;
+    checkbox.addEventListener('change', async () => {
+      try {
+        await api.put(`/api/day/${currentDate}`, {
+          updateEntry: { id: entry.id, checked: checkbox.checked },
+        });
+        entry.checked = checkbox.checked;
+        updateCheckAllState();
+      } catch (err) {
+        checkbox.checked = !checkbox.checked;
+        showToast(err.message, true);
+      }
+    });
+
     const item = createElement('div', { className: 'entry-item' }, [
+      checkbox,
       createElement('span', { className: 'entry-time', textContent: entry.time || '' }),
       createElement('div', { className: 'entry-info' }, [
         createElement('span', { className: 'entry-name', textContent: entry.itemName || 'Unknown' }),
@@ -242,7 +259,38 @@ function renderDay() {
     ]);
     list.appendChild(item);
   }
+  updateCheckAllState();
   updateDeficitDisplay();
+}
+
+function updateCheckAllState() {
+  const checkAll = $('#check-all-entries');
+  if (!checkAll || !currentDay) return;
+  const entries = currentDay.entries;
+  if (entries.length === 0) {
+    checkAll.checked = false;
+    checkAll.indeterminate = false;
+    return;
+  }
+  const checkedCount = entries.filter(e => e.checked).length;
+  checkAll.checked = checkedCount === entries.length;
+  checkAll.indeterminate = checkedCount > 0 && checkedCount < entries.length;
+}
+
+function bindCheckAll() {
+  const checkAll = $('#check-all-entries');
+  if (!checkAll) return;
+  checkAll.addEventListener('change', async () => {
+    const val = checkAll.checked;
+    try {
+      const result = await api.put(`/api/day/${currentDate}`, { checkAll: val });
+      currentDay = result;
+      renderEntries();
+    } catch (err) {
+      showToast(err.message, true);
+      checkAll.checked = !val;
+    }
+  });
 }
 
 function updateDeficitDisplay() {
