@@ -579,52 +579,85 @@ export function openItemForm(existingItem, onSaved) {
       addGroup.appendChild(addResults);
       container.appendChild(addGroup);
 
+      // Suggestions list (all items sorted by popularity)
+      const suggestionsDiv = createElement('div', { className: 'search-results' });
+      container.appendChild(suggestionsDiv);
+
       function addComponent(item) {
         components.push({ itemId: item.id, itemName: item.name, qty: 1, unitType: item.mode === 'per_100' ? 'g' : 'unit' });
         renderComponents();
         addInput.value = '';
         addResults.style.display = 'none';
+        suggestionsDiv.style.display = 'block';
+      }
+
+      function renderItemList(items, targetDiv, query) {
+        targetDiv.innerHTML = '';
+        if (items.length === 0) {
+          const emptyRow = createElement('div', {
+            style: 'padding: 8px 12px; display: flex; align-items: center; justify-content: space-between;',
+          }, [
+            createElement('span', { textContent: 'Aucun résultat', style: 'color: var(--text-muted); font-size: 0.85rem;' }),
+          ]);
+          if (query) {
+            emptyRow.appendChild(createElement('button', {
+              className: 'btn btn-primary btn-sm',
+              textContent: '+ Créer',
+              onClick: () => {
+                openItemForm({ name: query }, (newItem) => {
+                  addComponent(newItem);
+                });
+              },
+            }));
+          }
+          targetDiv.appendChild(emptyRow);
+          targetDiv.style.display = 'block';
+          return;
+        }
+        for (const item of items) {
+          const computed = item.computed || {};
+          const kcalStr = computed.kcal != null ? `${Math.round(computed.kcal)} kcal` : '';
+          targetDiv.appendChild(createElement('div', {
+            className: 'search-result-item',
+            onClick: () => addComponent(item),
+          }, [
+            createElement('span', { className: 'result-name', textContent: item.name }),
+            kcalStr ? createElement('span', { className: 'result-detail', textContent: kcalStr }) : null,
+          ].filter(Boolean)));
+        }
+        targetDiv.style.display = 'block';
       }
 
       const doSearch = debounce(async (q) => {
-        if (q.length < 1) { addResults.style.display = 'none'; return; }
+        if (q.length < 1) {
+          addResults.style.display = 'none';
+          suggestionsDiv.style.display = 'block';
+          return;
+        }
         try {
+          suggestionsDiv.style.display = 'none';
           const items = await api.get(`/api/items?search=${encodeURIComponent(q)}`);
-          addResults.innerHTML = '';
-          if (items.length === 0) {
-            const emptyRow = createElement('div', {
-              style: 'padding: 8px 12px; display: flex; align-items: center; justify-content: space-between;',
-            }, [
-              createElement('span', { textContent: 'Aucun résultat', style: 'color: var(--text-muted); font-size: 0.85rem;' }),
-              createElement('button', {
-                className: 'btn btn-primary btn-sm',
-                textContent: '+ Créer',
-                onClick: () => {
-                  openItemForm({ name: q }, (newItem) => {
-                    addComponent(newItem);
-                  });
-                },
-              }),
-            ]);
-            addResults.appendChild(emptyRow);
-            addResults.style.display = 'block';
-          } else {
-            for (const item of items) {
-              addResults.appendChild(createElement('div', {
-                className: 'search-result-item',
-                onClick: () => addComponent(item),
-              }, [
-                createElement('div', { className: 'result-name', textContent: item.name }),
-              ]));
-            }
-            addResults.style.display = 'block';
-          }
+          renderItemList(items, addResults, q);
         } catch (err) {
           showToast(err.message, true);
         }
       }, 300);
 
       addInput.addEventListener('input', () => doSearch(addInput.value.trim()));
+
+      // Load suggestions sorted by popularity
+      (async () => {
+        try {
+          const suggestions = await api.get('/api/suggestions');
+          if (suggestions.length > 0) {
+            renderItemList(suggestions, suggestionsDiv);
+          } else {
+            suggestionsDiv.style.display = 'none';
+          }
+        } catch {
+          suggestionsDiv.style.display = 'none';
+        }
+      })();
     }
 
     // Save button

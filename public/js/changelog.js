@@ -5,6 +5,13 @@ import { openModal } from './modal.js';
 // tag: 'feature' or 'fix'
 const CHANGELOG = [
   {
+    version: 12,
+    date: '17 février 2026',
+    tag: 'feature',
+    title: 'Suggestions dans les recettes',
+    description: 'Quand tu ajoutes un composant à une recette, la liste de tous tes aliments s\'affiche directement triée par popularité.',
+  },
+  {
     version: 11,
     date: '17 février 2026',
     tag: 'fix',
