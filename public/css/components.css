@@ -861,6 +861,34 @@ select.input {
 }
 
 /* ========================================
+   COMPOSITE NUTRITION SUMMARY
+   ======================================== */
+.composite-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--sp-md);
+}
+
+.composite-summary-kcal {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.composite-summary-macro {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* ========================================
    COMPOSITE COMPONENTS
    ======================================== */
 .component-row {

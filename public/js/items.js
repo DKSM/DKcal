@@ -536,6 +536,70 @@ export function openItemForm(existingItem, onSaved) {
     }
 
     function renderCompositePanel(container) {
+      // Items cache for computing nutrition client-side
+      const itemsCache = new Map();
+
+      // Nutritional summary (live preview)
+      const summaryDiv = createElement('div', { className: 'composite-summary', style: 'display: none;' });
+      container.appendChild(summaryDiv);
+
+      function updateSummary() {
+        if (components.length === 0) {
+          summaryDiv.style.display = 'none';
+          return;
+        }
+        let totalKcal = 0, totalProtein = 0, totalFat = 0, totalCarbs = 0;
+        let hasData = false;
+
+        for (const comp of components) {
+          const item = itemsCache.get(comp.itemId);
+          if (!item) continue;
+          hasData = true;
+
+          if (item.mode === 'per_100') {
+            const factor = comp.qty / 100;
+            totalKcal += (item.kcal_100 || 0) * factor;
+            totalProtein += (item.protein_100 || 0) * factor;
+            totalFat += (item.fat_100 || 0) * factor;
+            totalCarbs += (item.carbs_100 || 0) * factor;
+          } else if (item.mode === 'per_unit') {
+            totalKcal += (item.kcal_unit || 0) * comp.qty;
+            totalProtein += (item.protein_unit || 0) * comp.qty;
+            totalFat += (item.fat_unit || 0) * comp.qty;
+            totalCarbs += (item.carbs_unit || 0) * comp.qty;
+          } else if (item.mode === 'composite' && item.computed) {
+            totalKcal += (item.computed.kcal || 0) * comp.qty;
+            totalProtein += (item.computed.protein || 0) * comp.qty;
+            totalFat += (item.computed.fat || 0) * comp.qty;
+            totalCarbs += (item.computed.carbs || 0) * comp.qty;
+          }
+        }
+
+        if (!hasData) {
+          summaryDiv.style.display = 'none';
+          return;
+        }
+
+        summaryDiv.style.display = '';
+        summaryDiv.innerHTML = '';
+        summaryDiv.appendChild(createElement('span', {
+          className: 'composite-summary-kcal',
+          textContent: `${Math.round(totalKcal)} kcal`,
+        }));
+        summaryDiv.appendChild(createElement('span', {
+          className: 'composite-summary-macro',
+          innerHTML: `<b style="color:var(--protein-color)">P:</b> ${Math.round(totalProtein * 10) / 10}g`,
+        }));
+        summaryDiv.appendChild(createElement('span', {
+          className: 'composite-summary-macro',
+          innerHTML: `<b style="color:var(--warning)">L:</b> ${Math.round(totalFat * 10) / 10}g`,
+        }));
+        summaryDiv.appendChild(createElement('span', {
+          className: 'composite-summary-macro',
+          innerHTML: `<b style="color:var(--success)">G:</b> ${Math.round(totalCarbs * 10) / 10}g`,
+        }));
+      }
+
       const compsDiv = createElement('div', { id: 'components-list' });
       container.appendChild(compsDiv);
       compsDiv.addEventListener('refresh', () => renderComponents());
@@ -548,7 +612,7 @@ export function openItemForm(existingItem, onSaved) {
             createElement('input', {
               className: 'input', type: 'number', style: 'width: 70px; flex: none;',
               value: comp.qty, min: '0.1', step: 'any',
-              onInput: (e) => { components[idx].qty = parseFloat(e.target.value) || 0; },
+              onInput: (e) => { components[idx].qty = parseFloat(e.target.value) || 0; updateSummary(); },
             }),
             createElement('select', {
               className: 'input', style: 'width: 70px; flex: none;',
@@ -564,6 +628,7 @@ export function openItemForm(existingItem, onSaved) {
           ]);
           compsDiv.appendChild(row);
         });
+        updateSummary();
       }
 
       renderComponents();
@@ -584,7 +649,13 @@ export function openItemForm(existingItem, onSaved) {
       container.appendChild(suggestionsDiv);
 
       function addComponent(item) {
-        components.push({ itemId: item.id, itemName: item.name, qty: 1, unitType: item.mode === 'per_100' ? 'g' : 'unit' });
+        const isPer100 = item.mode === 'per_100';
+        components.push({
+          itemId: item.id,
+          itemName: item.name,
+          qty: isPer100 ? 100 : 1,
+          unitType: isPer100 ? (item.baseUnit || 'g') : 'unit',
+        });
         renderComponents();
         addInput.value = '';
         addResults.style.display = 'none';
@@ -637,6 +708,7 @@ export function openItemForm(existingItem, onSaved) {
         try {
           suggestionsDiv.style.display = 'none';
           const items = await api.get(`/api/items?search=${encodeURIComponent(q)}`);
+          for (const item of items) itemsCache.set(item.id, item);
           renderItemList(items, addResults, q);
         } catch (err) {
           showToast(err.message, true);
@@ -649,11 +721,13 @@ export function openItemForm(existingItem, onSaved) {
       (async () => {
         try {
           const suggestions = await api.get('/api/suggestions');
+          for (const item of suggestions) itemsCache.set(item.id, item);
           if (suggestions.length > 0) {
             renderItemList(suggestions, suggestionsDiv);
           } else {
             suggestionsDiv.style.display = 'none';
           }
+          updateSummary();
         } catch {
           suggestionsDiv.style.display = 'none';
         }

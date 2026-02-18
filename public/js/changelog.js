@@ -5,6 +5,13 @@ import { openModal } from './modal.js';
 // tag: 'feature' or 'fix'
 const CHANGELOG = [
   {
+    version: 13,
+    date: '18 février 2026',
+    tag: 'feature',
+    title: 'Preview nutritionnel des recettes',
+    description: 'Les calories et macros de ta recette se calculent en direct au fur et à mesure que tu ajoutes ou modifies les composants. Les aliments en grammes/millilitres démarrent aussi à 100 par défaut.',
+  },
+  {
     version: 12,
     date: '17 février 2026',
     tag: 'feature',
