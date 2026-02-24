@@ -29,7 +29,7 @@ function linearTrend(values) {
   return values.map((_, i) => Math.round((slope * i + intercept) * 100) / 100);
 }
 
-async function computeStats(userId = 'default', fromDate, toDate) {
+async function computeStats(userId = 'default', fromDate, toDate, minKcal = 0) {
   const allDates = await storage.listDayDates(userId);
   const filtered = allDates.filter(d => d >= fromDate && d <= toDate);
 
@@ -51,10 +51,20 @@ async function computeStats(userId = 'default', fromDate, toDate) {
 
     if (filteredSet.has(dateStr)) {
       const day = await storage.readDay(userId, dateStr);
-      kcalValues.push(day.totals?.kcal || 0);
-      proteinValues.push(day.totals?.protein || 0);
-      fatValues.push(day.totals?.fat || 0);
-      carbsValues.push(day.totals?.carbs || 0);
+      const dayKcal = day.totals?.kcal || 0;
+
+      // Filtre jours incomplets : en dessous du seuil → traité comme vide
+      if (minKcal > 0 && dayKcal > 0 && dayKcal < minKcal) {
+        kcalValues.push(0);
+        proteinValues.push(0);
+        fatValues.push(0);
+        carbsValues.push(0);
+      } else {
+        kcalValues.push(dayKcal);
+        proteinValues.push(day.totals?.protein || 0);
+        fatValues.push(day.totals?.fat || 0);
+        carbsValues.push(day.totals?.carbs || 0);
+      }
       weightValues.push(day.weight || null);
     } else {
       kcalValues.push(0);
@@ -69,10 +79,12 @@ async function computeStats(userId = 'default', fromDate, toDate) {
   const today = new Date().toISOString().slice(0, 10);
   const todayIdx = dates.indexOf(today);
 
-  const nonZeroKcal = kcalValues.filter((v, i) => v > 0 && i !== todayIdx);
-  const nonZeroProtein = proteinValues.filter((v, i) => v > 0 && i !== todayIdx);
-  const nonZeroFat = fatValues.filter((v, i) => v > 0 && i !== todayIdx);
-  const nonZeroCarbs = carbsValues.filter((v, i) => v > 0 && i !== todayIdx);
+  // Filtrage synchronisé : un jour compte si ses kcal > 0 (après filtrage minKcal)
+  const validDay = (i) => kcalValues[i] > 0 && i !== todayIdx;
+  const nonZeroKcal = kcalValues.filter((_, i) => validDay(i));
+  const nonZeroProtein = proteinValues.filter((_, i) => validDay(i));
+  const nonZeroFat = fatValues.filter((_, i) => validDay(i));
+  const nonZeroCarbs = carbsValues.filter((_, i) => validDay(i));
   const nonNullWeight = weightValues.filter(v => v != null);
 
   return {

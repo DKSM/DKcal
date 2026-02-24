@@ -23,6 +23,7 @@ export function openStatsModal() {
     ];
 
     let activePeriod = 30;
+    let minKcal = 50;
     const periodBtns = {};
 
     for (const p of periods) {
@@ -44,6 +45,24 @@ export function openStatsModal() {
       periodBtns[p.days] = btn;
       periodDiv.appendChild(btn);
     }
+
+    // Toggle filtre jours incomplets
+    const filterBtn = createElement('button', {
+      className: 'period-btn filter-toggle active',
+      innerHTML: '∅ <span>&lt; 50 kcal</span>',
+      title: 'Exclure les jours en dessous de 50 kcal',
+      onClick: () => {
+        filterBtn.classList.toggle('active');
+        minKcal = filterBtn.classList.contains('active') ? 50 : 0;
+        if (activePeriod > 0) {
+          loadStats(activePeriod);
+        } else {
+          loadCustomStats(fromInput.value, toInput.value);
+        }
+      },
+    });
+    periodDiv.appendChild(filterBtn);
+
     body.appendChild(periodDiv);
 
     // Custom range
@@ -84,7 +103,7 @@ export function openStatsModal() {
 
     async function fetchAndRender(from, to) {
       try {
-        const stats = await api.get(`/api/stats?from=${from}&to=${to}`);
+        const stats = await api.get(`/api/stats?from=${from}&to=${to}&minKcal=${minKcal}`);
         renderCharts(chartsDiv, stats);
         renderSummary(summaryDiv, stats.summary);
       } catch (err) {

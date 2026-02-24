@@ -24,7 +24,8 @@ router.get('/stats', async (req, res, next) => {
       from = d.toISOString().slice(0, 10);
     }
 
-    const stats = await computeStats(req.session.userId, from, to);
+    const minKcal = Math.max(0, Math.min(5000, parseInt(req.query.minKcal) || 0));
+    const stats = await computeStats(req.session.userId, from, to, minKcal);
     res.json(stats);
   } catch (err) {
     next(err);

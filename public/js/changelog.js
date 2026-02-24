@@ -5,6 +5,13 @@ import { openModal } from './modal.js';
 // tag: 'feature' or 'fix'
 const CHANGELOG = [
   {
+    version: 14,
+    date: '24 février 2026',
+    tag: 'feature',
+    title: 'Filtre jours incomplets',
+    description: 'Les statistiques excluent maintenant les jours en dessous de 50 kcal par défaut, pour ne pas fausser les moyennes. Un bouton toggle dans la barre de période permet de réactiver ces jours.',
+  },
+  {
     version: 13,
     date: '18 février 2026',
     tag: 'feature',
