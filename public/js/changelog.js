@@ -5,6 +5,13 @@ import { openModal } from './modal.js';
 // tag: 'feature' or 'fix'
 const CHANGELOG = [
   {
+    version: 15,
+    date: '11 mars 2026',
+    tag: 'fix',
+    title: 'Bouton tout cocher réparé',
+    description: 'La case "tout cocher / décocher" dans la liste des consommations ne fonctionnait pas. C\'est maintenant corrigé.',
+  },
+  {
     version: 14,
     date: '24 février 2026',
     tag: 'feature',

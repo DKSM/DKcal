@@ -289,7 +289,7 @@ function bindCheckAll() {
     try {
       const result = await api.put(`/api/day/${currentDate}`, { checkAll: val });
       currentDay = result;
-      renderEntries();
+      renderDay();
     } catch (err) {
       showToast(err.message, true);
       checkAll.checked = !val;
