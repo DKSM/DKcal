@@ -5,6 +5,13 @@ import { openModal } from './modal.js';
 // tag: 'feature' or 'fix'
 const CHANGELOG = [
   {
+    version: 16,
+    date: '11 mars 2026',
+    tag: 'feature',
+    title: 'Valeurs négatives en temporaire',
+    description: 'Les aliments temporaires acceptent maintenant des valeurs négatives pour les calories et macros. Pratique pour ajuster manuellement ta journée.',
+  },
+  {
     version: 15,
     date: '11 mars 2026',
     tag: 'fix',

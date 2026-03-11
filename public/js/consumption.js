@@ -310,14 +310,14 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
     const gKcal = createElement('div', { className: 'form-group' });
     gKcal.appendChild(createElement('label', { textContent: 'Calories' }));
     const kcalInput = createElement('input', {
-      className: 'input', type: 'number', placeholder: '0', min: '0', step: 'any',
+      className: 'input', type: 'number', placeholder: '0', step: 'any',
       value: existingEntry?.kcal ?? '',
     });
     gKcal.appendChild(kcalInput);
     const gProt = createElement('div', { className: 'form-group' });
     gProt.appendChild(createElement('label', { textContent: 'Protéines (g)' }));
     const protInput = createElement('input', {
-      className: 'input', type: 'number', placeholder: '0', min: '0', step: 'any',
+      className: 'input', type: 'number', placeholder: '0', step: 'any',
       value: existingEntry?.protein ?? '',
     });
     gProt.appendChild(protInput);
@@ -329,14 +329,14 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
     const gFat = createElement('div', { className: 'form-group' });
     gFat.appendChild(createElement('label', { textContent: 'Lipides (g)' }));
     const fatInput = createElement('input', {
-      className: 'input', type: 'number', placeholder: '0', min: '0', step: 'any',
+      className: 'input', type: 'number', placeholder: '0', step: 'any',
       value: existingEntry?.fat ?? '',
     });
     gFat.appendChild(fatInput);
     const gCarbs = createElement('div', { className: 'form-group' });
     gCarbs.appendChild(createElement('label', { textContent: 'Glucides (g)' }));
     const carbsInput = createElement('input', {
-      className: 'input', type: 'number', placeholder: '0', min: '0', step: 'any',
+      className: 'input', type: 'number', placeholder: '0', step: 'any',
       value: existingEntry?.carbs ?? '',
     });
     gCarbs.appendChild(carbsInput);
