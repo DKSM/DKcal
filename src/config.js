@@ -6,7 +6,7 @@ if (!process.env.SESSION_SECRET) {
 }
 
 module.exports = {
-  port: parseInt(process.env.PORT, 10) || 3001,
+  port: parseInt(process.env.PORT, 10) || 3002,
   sessionSecret,
   groqApiKey: process.env.GROQ_API_KEY || '',
 };
