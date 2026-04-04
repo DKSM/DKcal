@@ -322,6 +322,20 @@ export function openItemForm(existingItem, onSaved) {
 
       estimateResultRow.innerHTML = '';
       estimateResultRow.style.display = 'flex';
+      if (result.provider) {
+        const isCodex = result.provider === 'codex';
+        estimateResultRow.appendChild(createElement('span', {
+          className: `provider-badge provider-${result.provider}`,
+          textContent: isCodex ? 'Codex' : 'Groq',
+        }));
+      }
+      if (result.web_sources && result.web_sources.length > 0) {
+        estimateResultRow.appendChild(createElement('span', {
+          className: 'provider-badge provider-web',
+          textContent: `\uD83C\uDF10 ${result.web_sources.length} sources`,
+          title: result.web_sources.map(s => s.title || s.url).join('\n'),
+        }));
+      }
       estimateResultRow.appendChild(createElement('span', {
         style: 'font-size: 0.8rem; font-weight: 600; color: var(--accent); white-space: nowrap;',
         textContent: `${result.kcal} kcal`,
@@ -838,6 +852,7 @@ export function showEstimateChat(context, onApply) {
   let sendCount = messages.slice(2).filter(m => m.role === 'user').length;
   let selectedResult = null;
   let selectedIdx = -1;
+  let conversationId = context.conversation_id || null;
 
   function closeChat() {
     overlay.classList.remove('active');
@@ -873,13 +888,90 @@ export function showEstimateChat(context, onApply) {
   }
 
   function formatPlainText(text) {
-    // Escape HTML, then apply simple markdown formatting
-    const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    return escaped
-      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/^- (.+)$/gm, '<span class="chat-list-item">$1</span>')
-      .replace(/\n/g, '<br>')
-      .replace(/(https?:\/\/[^\s<,)]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+    const lines = text.split('\n');
+    let html = '';
+    let listStack = []; // track nested list depth
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+
+      // Heading
+      const headingMatch = line.match(/^#{1,3} (.+)/);
+      if (headingMatch) {
+        html += closeListsTo(0);
+        html += '<strong>' + inline(headingMatch[1]) + '</strong><br>';
+        continue;
+      }
+
+      // List item (with indentation support)
+      const listMatch = line.match(/^( *)[•\-\*] (.+)/);
+      if (listMatch) {
+        const depth = Math.floor(listMatch[1].length / 2) + 1;
+        if (depth > listStack.length) {
+          html += '<ul>'; listStack.push('ul');
+        } else if (depth < listStack.length) {
+          html += closeListsTo(depth);
+        }
+        html += '<li>' + inline(listMatch[2]) + '</li>';
+        continue;
+      }
+
+      // Numbered list
+      const numMatch = line.match(/^( *)\d+[\.\)] (.+)/);
+      if (numMatch) {
+        const depth = Math.floor(numMatch[1].length / 2) + 1;
+        if (depth > listStack.length) {
+          html += '<ol>'; listStack.push('ol');
+        } else if (depth < listStack.length) {
+          html += closeListsTo(depth);
+        }
+        html += '<li>' + inline(numMatch[2]) + '</li>';
+        continue;
+      }
+
+      // Empty line
+      if (!line.trim()) {
+        // Don't close lists on empty lines between items — peek ahead
+        if (listStack.length > 0) {
+          const next = lines[i + 1] || '';
+          if (!next.match(/^ *[•\-\*] /) && !next.match(/^ *\d+[\.\)] /)) {
+            html += closeListsTo(0);
+          }
+        }
+        continue;
+      }
+
+      // Paragraph
+      html += closeListsTo(0);
+      let para = inline(line);
+      while (i + 1 < lines.length && lines[i + 1].trim()
+        && !lines[i + 1].match(/^( *[•\-\*] | *\d+[\.\)] |#{1,3} )/)
+      ) {
+        i++;
+        para += '<br>' + inline(lines[i]);
+      }
+      html += '<p style="margin:4px 0">' + para + '</p>';
+    }
+
+    html += closeListsTo(0);
+    return html;
+
+    function closeListsTo(target) {
+      let s = '';
+      while (listStack.length > target) {
+        const tag = listStack.pop();
+        s += '</' + tag + '>';
+      }
+      return s;
+    }
+    function esc(s) {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+    function inline(s) {
+      return esc(s)
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/(https?:\/\/[^\s<,)]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+    }
   }
 
   function renderMessages() {
@@ -892,6 +984,13 @@ export function showEstimateChat(context, onApply) {
       });
 
       if (msg.role === 'assistant') {
+        if (msg.provider) {
+          const isCodex = msg.provider === 'codex';
+          msgDiv.appendChild(createElement('span', {
+            className: `provider-badge provider-${msg.provider}`,
+            textContent: isCodex ? 'Codex' : 'Groq',
+          }));
+        }
         let parsed;
         try { parsed = JSON.parse(msg.content); } catch { parsed = null; }
 
@@ -924,6 +1023,22 @@ export function showEstimateChat(context, onApply) {
           const textEl = createElement('div', { className: 'estimate-chat-text' });
           textEl.innerHTML = formatPlainText(msg.content);
           msgDiv.appendChild(textEl);
+
+          // Extracted macros from pass 2
+          if (msg.macros && msg.macros.kcal != null) {
+            const macroLine = createElement('div', { className: 'estimate-chat-macros', style: 'margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--glass-border);' });
+            macroLine.innerHTML = `<span style="color:var(--accent);font-weight:700">${msg.macros.kcal} kcal</span> · <span style="color:var(--protein-color)">P: ${msg.macros.protein}g</span> · <span style="color:var(--warning)">L: ${msg.macros.fat}g</span> · <span style="color:var(--success)">G: ${msg.macros.carbs}g</span>`;
+            msgDiv.appendChild(macroLine);
+            if (msg.macros.summary) {
+              msgDiv.appendChild(createElement('div', { className: 'estimate-chat-summary', textContent: msg.macros.summary }));
+            }
+            const idx = i;
+            msgDiv.appendChild(createElement('button', {
+              className: 'btn btn-sm estimate-chat-apply',
+              textContent: `Appliquer ${msg.macros.kcal} kcal`,
+              onClick: () => selectResult(msg.macros, idx),
+            }));
+          }
         }
       } else {
         msgDiv.appendChild(createElement('span', { textContent: msg.content }));
@@ -985,33 +1100,41 @@ export function showEstimateChat(context, onApply) {
     sendBtn.disabled = true;
 
     try {
-      const compressed = messages.map(m => {
-        if (m.role === 'assistant') {
-          try {
-            const p = JSON.parse(m.content);
-            if (p.details) {
-              const { details, ...rest } = p;
-              return { role: 'assistant', content: JSON.stringify(rest) };
-            }
-          } catch {}
-        }
-        return m;
+      let chatMessages;
+      if (conversationId) {
+        // DKai has the full history — send only the new message
+        chatMessages = [{ role: 'user', content: text }];
+      } else {
+        // First chat call — send the full context so DKai creates the conversation
+        chatMessages = [
+          { role: 'system', content: messages[0]?.role === 'system' ? messages[0].content : '' },
+          ...messages.filter(m => m.role !== 'system'),
+        ];
+      }
+
+      const result = await api.post('/api/estimate-chat', {
+        messages: chatMessages,
+        conversation_id: conversationId,
       });
 
-      const result = await api.post('/api/estimate-chat', { messages: compressed });
+      if (result.conversation_id) {
+        conversationId = result.conversation_id;
+        context.conversation_id = conversationId;
+      }
+
       let responseContent;
+      let extractedMacros = null;
       if (result.text) {
-        // Plain text response (explanation, detail, question answer)
         responseContent = result.text;
+        if (result.macros) extractedMacros = result.macros;
       } else {
-        // JSON response with nutrition values
         responseContent = JSON.stringify({
           kcal: result.kcal, protein: result.protein,
           fat: result.fat, carbs: result.carbs, summary: result.summary,
           details: result.details,
         });
       }
-      messages.push({ role: 'assistant', content: responseContent });
+      messages.push({ role: 'assistant', content: responseContent, provider: result.provider || null, macros: extractedMacros });
       context.messages = [...messages];
       renderMessages();
       limitInfo.textContent = `${sendCount}/50 messages`;

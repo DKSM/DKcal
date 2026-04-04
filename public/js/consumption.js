@@ -399,6 +399,20 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
 
       estimateResultRow.innerHTML = '';
       estimateResultRow.style.display = 'flex';
+      if (result.provider) {
+        const isCodex = result.provider === 'codex';
+        estimateResultRow.appendChild(createElement('span', {
+          className: `provider-badge provider-${result.provider}`,
+          textContent: isCodex ? 'Codex' : 'Groq',
+        }));
+      }
+      if (result.web_sources && result.web_sources.length > 0) {
+        estimateResultRow.appendChild(createElement('span', {
+          className: 'provider-badge provider-web',
+          textContent: `\uD83C\uDF10 ${result.web_sources.length} sources`,
+          title: result.web_sources.map(s => s.title || s.url).join('\n'),
+        }));
+      }
       estimateResultRow.appendChild(createElement('span', {
         style: 'font-size: 0.8rem; font-weight: 600; color: var(--accent); white-space: nowrap;',
         textContent: `${result.kcal} kcal`,

@@ -10,9 +10,10 @@ const SYSTEM_PROMPT = `Tu es un assistant nutritionniste bienveillant qui parle 
 
 Règles strictes :
 - Si un aliment est décrit comme "cuit" ou "cuite", utilise les valeurs APRÈS cuisson (pâtes cuites ~130 kcal/100g, pas 350).
-- Si c'est un produit de marque, recherche les valeurs exactes sur le site du fabricant ou une base nutritionnelle comme OpenFoodFacts.
+- Si c'est un produit de marque, base-toi en PRIORITÉ sur les résultats de recherche web fournis. Croise les sources entre elles pour fiabiliser.
 - Additionne les valeurs de chaque ingrédient séparément.
 - Vérifie la cohérence : kcal ≈ protein×4 + fat×9 + carbs×4.
+- ESPRIT CRITIQUE : les résultats de recherche web peuvent contenir des erreurs ou des données pour le mauvais produit. Vérifie que les sources correspondent bien à l'aliment demandé. Si les sources se contredisent, privilégie les bases nutritionnelles officielles (OpenFoodFacts, Ciqual, USDA). Si une source te semble incohérente, ignore-la et signale-le dans le summary.
 
 Format de réponse OBLIGATOIRE (JSON uniquement, rien d'autre) :
 {
@@ -57,49 +58,85 @@ Règles :
 - En texte libre, tu peux détailler autant que nécessaire.
 - Sois concis mais complet.`;
 
-async function estimateNutrition(description, unit = '100g', name = '') {
-  if (!config.groqApiKey) {
-    throw Object.assign(new Error('Clé API Groq non configurée'), { status: 503 });
+const SYSTEM_PROMPT_EXTRACT = `Tu es un extracteur de macronutriments. On te donne un échange entre un utilisateur et un assistant nutritionniste.
+
+Ta tâche : extraire les valeurs nutritionnelles FINALES de la réponse de l'assistant et les formater.
+
+Réponds UNIQUEMENT en JSON, rien d'autre :
+{"kcal":nombre,"protein":nombre,"fat":nombre,"carbs":nombre,"summary":"résumé de 1-2 phrases max, en français, expliquant d'où viennent les chiffres"}
+
+Règles :
+- Si l'assistant a donné des macros (même approximatives), extrais-les.
+- Si l'assistant a détaillé par ingrédient, ADDITIONNE le tout.
+- Si l'assistant n'a donné AUCUNE valeur nutritionnelle (question hors-sujet), réponds : {"no_macros":true}
+- Vérifie la cohérence : kcal ≈ protein×4 + fat×9 + carbs×4.`;
+
+// ---------------------------------------------------------------------------
+// DKai helper
+// ---------------------------------------------------------------------------
+
+async function dkai(messages, options = {}) {
+  const res = await fetch(`${config.dkaiUrl}/api/chat`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${config.dkaiToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ messages, options }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw Object.assign(new Error(err.error || `DKai ${res.status}`), { status: 502 });
   }
 
+  return res.json();
+}
+
+async function dkaiVision(image, prompt, system, options = {}) {
+  const res = await fetch(`${config.dkaiUrl}/api/vision`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${config.dkaiToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ image, prompt, system, options }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw Object.assign(new Error(err.error || `DKai vision ${res.status}`), { status: 502 });
+  }
+
+  return res.json();
+}
+
+// ---------------------------------------------------------------------------
+// Public functions
+// ---------------------------------------------------------------------------
+
+async function estimateNutrition(description, unit = '100g', name = '') {
   const unitLabel = UNIT_PROMPTS[unit] || UNIT_PROMPTS['100g'];
   const nameCtx = name ? ` (produit : "${name}")` : '';
 
   const prompt = `${unitLabel} "${description}"${nameCtx}. Toutes les valeurs doivent être cohérentes (kcal ≈ protein×4 + fat×9 + carbs×4). Réponds UNIQUEMENT en JSON : {"kcal":nombre,"protein":nombre,"fat":nombre,"carbs":nombre,"summary":"résumé court","details":"explication détaillée"}`;
 
-  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${config.groqApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'compound-beta',
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: prompt },
-      ],
-      temperature: 0.1,
-      max_tokens: 500,
-    }),
+  const result = await dkai([
+    { role: 'system', content: SYSTEM_PROMPT },
+    { role: 'user', content: prompt },
+  ], {
+    web_search: true,
+    web_search_depth: 20,
+    json_mode: true,
   });
 
-  if (!response.ok) {
-    throw Object.assign(new Error(`Erreur API Groq: ${response.status}`), { status: 502 });
-  }
-
-  const data = await response.json();
-  const content = data.choices?.[0]?.message?.content?.trim();
-
-  if (!content) {
-    throw Object.assign(new Error('Réponse vide de l\'IA'), { status: 502 });
-  }
-
-  return parseEstimateResponse(content);
+  const parsed = parseEstimateResponse(result.content);
+  parsed.provider = result.provider || null;
+  parsed.web_sources = result.web_sources || null;
+  return parsed;
 }
 
 function parseEstimateResponse(content) {
-  // Try JSON.parse first for clean responses
   let parsed = null;
   try {
     const jsonMatch = content.match(/\{[\s\S]*\}/);
@@ -140,95 +177,70 @@ function parseEstimateResponse(content) {
 }
 
 async function estimateFromImage(imageBase64, unit = '100g', name = '') {
-  if (!config.groqApiKey) {
-    throw Object.assign(new Error('Clé API Groq non configurée'), { status: 503 });
-  }
-
   const unitLabel = UNIT_PROMPTS[unit] || UNIT_PROMPTS['100g'];
   const nameCtx = name ? ` (produit : "${name}")` : '';
 
-  const textContent = `Analyse cette image${nameCtx}. Si c'est une étiquette nutritionnelle, lis les valeurs ${unitLabel} le produit. Si c'est un plat ou un produit visible, estime les valeurs ${unitLabel} ce que tu vois. Toutes les valeurs doivent être cohérentes (kcal ≈ protein×4 + fat×9 + carbs×4). Réponds UNIQUEMENT en JSON : {"kcal":nombre,"protein":nombre,"fat":nombre,"carbs":nombre,"summary":"résumé court","details":"explication détaillée"}`;
+  const prompt = `Analyse cette image${nameCtx}. Si c'est une étiquette nutritionnelle, lis les valeurs ${unitLabel} le produit. Si c'est un plat ou un produit visible, estime les valeurs ${unitLabel} ce que tu vois. Toutes les valeurs doivent être cohérentes (kcal ≈ protein×4 + fat×9 + carbs×4). Réponds UNIQUEMENT en JSON.`;
 
-  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${config.groqApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT_IMAGE },
-        {
-          role: 'user',
-          content: [
-            { type: 'text', text: textContent },
-            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${imageBase64}` } },
-          ],
-        },
-      ],
-      temperature: 0.1,
-      max_tokens: 500,
-    }),
+  const result = await dkaiVision(imageBase64, prompt, SYSTEM_PROMPT_IMAGE, {
+    json_mode: true,
   });
 
-  if (!response.ok) {
-    throw Object.assign(new Error(`Erreur API Groq: ${response.status}`), { status: 502 });
-  }
-
-  const data = await response.json();
-  const content = data.choices?.[0]?.message?.content?.trim();
-
-  if (!content) {
-    throw Object.assign(new Error('Réponse vide de l\'IA'), { status: 502 });
-  }
-
-  return parseEstimateResponse(content);
+  const parsed = parseEstimateResponse(result.content);
+  parsed.provider = result.provider || null;
+  parsed.web_sources = result.web_sources || null;
+  return parsed;
 }
 
-async function estimateChat(messages) {
-  if (!config.groqApiKey) {
-    throw Object.assign(new Error('Clé API Groq non configurée'), { status: 503 });
+async function estimateChat(messages, conversationId = null) {
+  const options = {};
+
+  if (conversationId) {
+    options.conversation_id = conversationId;
+  } else {
+    options.persist = true;
   }
 
-  if (messages.length > 100) {
-    throw Object.assign(new Error('Limite de messages dépassée'), { status: 400 });
-  }
+  // Pass 1 — natural response from the AI
+  const result = await dkai(messages, options);
 
-  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${config.groqApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'compound-beta',
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT_CHAT },
-        ...messages,
-      ],
-      temperature: 0.1,
-      max_tokens: 500,
-    }),
-  });
+  const response = {
+    conversation_id: result.conversation_id,
+    provider: result.provider || null,
+  };
 
-  if (!response.ok) {
-    throw Object.assign(new Error(`Erreur API Groq: ${response.status}`), { status: 502 });
-  }
-
-  const data = await response.json();
-  const content = data.choices?.[0]?.message?.content?.trim();
-
-  if (!content) {
-    throw Object.assign(new Error('Réponse vide de l\'IA'), { status: 502 });
-  }
-
-  // Try to parse as JSON (nutrition values). If not JSON, return as plain text.
+  // If already clean JSON, use it directly
   try {
-    return parseEstimateResponse(content);
-  } catch {
-    return { text: content };
-  }
+    Object.assign(response, parseEstimateResponse(result.content));
+    return response;
+  } catch { /* not JSON, proceed to pass 2 */ }
+
+  response.text = result.content;
+
+  // Pass 2 — extract macros from the text response
+  const lastUserMsg = messages.filter(m => m.role === 'user').pop();
+  try {
+    const extract = await dkai([
+      { role: 'system', content: SYSTEM_PROMPT_EXTRACT },
+      { role: 'user', content: `Question de l'utilisateur : "${lastUserMsg?.content || ''}"
+
+Réponse de l'assistant :
+${result.content}` },
+    ], { json_mode: true });
+
+    const parsed = JSON.parse(extract.content.match(/\{[\s\S]*\}/)?.[0] || '{}');
+    if (parsed.kcal != null && !parsed.no_macros) {
+      response.macros = {
+        kcal: Math.round(parsed.kcal),
+        protein: parsed.protein != null ? Math.round(parsed.protein * 10) / 10 : 0,
+        fat: parsed.fat != null ? Math.round(parsed.fat * 10) / 10 : 0,
+        carbs: parsed.carbs != null ? Math.round(parsed.carbs * 10) / 10 : 0,
+        summary: parsed.summary || null,
+      };
+    }
+  } catch { /* extraction failed, no macros — that's ok */ }
+
+  return response;
 }
 
 module.exports = { estimateNutrition, estimateFromImage, estimateChat };

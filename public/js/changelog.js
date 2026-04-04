@@ -5,6 +5,27 @@ import { openModal } from './modal.js';
 // tag: 'feature' or 'fix'
 const CHANGELOG = [
   {
+    version: 19,
+    date: '4 avril 2026',
+    tag: 'feature',
+    title: 'IA centralisée via DKai',
+    description: 'L\'estimation nutritionnelle passe par DKai, notre service IA centralisé. Modèle GPT-5.4 via Codex en principal, Groq en fallback. Une pastille indique quel provider a répondu.',
+  },
+  {
+    version: 18,
+    date: '4 avril 2026',
+    tag: 'feature',
+    title: 'Recherche web + persistance des conversations',
+    description: 'L\'IA recherche automatiquement sur internet les valeurs nutritionnelles des produits de marque (20 sources). Les discussions gardent le contexte grâce à la persistance — plus besoin de tout réexpliquer.',
+  },
+  {
+    version: 17,
+    date: '4 avril 2026',
+    tag: 'feature',
+    title: 'Extraction automatique des macros',
+    description: 'Même quand l\'IA répond en texte libre, les macronutriments sont automatiquement extraits et proposés via le bouton "Appliquer". Plus besoin de les demander explicitement.',
+  },
+  {
     version: 16,
     date: '11 mars 2026',
     tag: 'feature',

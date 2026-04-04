@@ -135,12 +135,28 @@
 }
 
 /* Estimate chat popup */
-.estimate-chat-popup {
+.hint-popup.estimate-chat-popup {
   display: flex;
   flex-direction: column;
-  max-height: 85vh;
-  max-width: var(--modal-max-width, 560px);
+  max-height: 90vh;
+  max-width: 560px;
   width: 94%;
+}
+
+@media (min-width: 768px) {
+  .hint-popup.estimate-chat-popup {
+    max-width: 75vw;
+    width: 75vw;
+  }
+  .hint-popup.estimate-chat-popup .estimate-chat-messages {
+    max-height: 65vh;
+  }
+}
+
+@media (min-width: 1400px) {
+  .hint-popup.estimate-chat-popup {
+    max-width: 60vw;
+  }
 }
 
 .estimate-chat-header {
@@ -216,15 +232,16 @@
 }
 
 .estimate-chat-summary {
-  color: var(--text-secondary);
+  color: var(--text-primary);
   font-style: italic;
   font-size: 0.82rem;
+  margin-top: 4px;
 }
 
 .estimate-chat-details {
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-size: 0.8rem;
-  margin-top: 4px;
+  margin-top: 6px;
   line-height: 1.5;
 }
 
@@ -249,17 +266,30 @@
   color: var(--text-primary);
 }
 
-.chat-list-item {
-  display: block;
-  padding-left: 12px;
-  position: relative;
+.estimate-chat-text ul,
+.estimate-chat-text ol {
+  margin: 4px 0;
+  padding-left: 20px;
 }
 
-.chat-list-item::before {
-  content: "•";
-  position: absolute;
-  left: 0;
-  color: var(--text-muted);
+.estimate-chat-text li {
+  line-height: 1.5;
+  margin: 1px 0;
+}
+
+.estimate-chat-text p {
+  margin: 4px 0;
+}
+
+.estimate-chat-details ul,
+.estimate-chat-details ol {
+  margin: 4px 0;
+  padding-left: 20px;
+}
+
+.estimate-chat-details li {
+  line-height: 1.5;
+  margin: 1px 0;
 }
 
 .estimate-chat-apply {
@@ -341,6 +371,39 @@
 @keyframes typing-bounce {
   0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
   30% { opacity: 1; transform: translateY(-4px); }
+}
+
+/* Provider badge */
+.provider-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
+  border-radius: 4px;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+.provider-codex {
+  background: rgba(16, 163, 127, 0.15);
+  color: #10a37f;
+}
+
+.provider-groq {
+  background: rgba(244, 114, 55, 0.15);
+  color: #f47237;
+}
+
+.provider-web {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+  cursor: help;
+}
+
+.estimate-chat-msg .provider-badge {
+  margin-bottom: 4px;
 }
 
 .btn-danger {

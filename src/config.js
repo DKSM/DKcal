@@ -8,5 +8,6 @@ if (!process.env.SESSION_SECRET) {
 module.exports = {
   port: parseInt(process.env.PORT, 10) || 3002,
   sessionSecret,
-  groqApiKey: process.env.GROQ_API_KEY || '',
+  dkaiUrl: process.env.DKAI_URL || 'http://localhost:3050',
+  dkaiToken: process.env.DKAI_TOKEN || '',
 };

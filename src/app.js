@@ -85,14 +85,11 @@ app.post('/api/estimate-image', express.json({ limit: '5mb' }), async (req, res,
 // AI nutrition chat (follow-up corrections)
 app.post('/api/estimate-chat', async (req, res, next) => {
   try {
-    const { messages } = req.body;
+    const { messages, conversation_id } = req.body;
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return res.status(400).json({ error: 'Messages requis' });
     }
-    if (messages.length > 100) {
-      return res.status(400).json({ error: 'Trop de messages (max 100)' });
-    }
-    const result = await estimateChat(messages);
+    const result = await estimateChat(messages, conversation_id || null);
     res.json(result);
   } catch (err) {
     next(err);
