@@ -100,6 +100,44 @@ async function listDayDates(userId = 'default') {
   }
 }
 
+// Audio recordings (kept 30 days)
+const AUDIO_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+
+function audioDir(userId = 'default') {
+  return path.join(getUserDir(userId), 'audio');
+}
+
+async function saveAudio(userId, audioBase64, ext = 'webm') {
+  const dir = audioDir(userId);
+  await fs.mkdir(dir, { recursive: true });
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const filePath = path.join(dir, `${timestamp}.${ext}`);
+  const buffer = Buffer.from(audioBase64, 'base64');
+  await fs.writeFile(filePath, buffer);
+  // Fire-and-forget cleanup of old audio files
+  cleanupOldAudio(userId).catch(err => console.error('[audio cleanup]', err));
+  return filePath;
+}
+
+async function cleanupOldAudio(userId) {
+  const dir = audioDir(userId);
+  try {
+    const files = await fs.readdir(dir);
+    const now = Date.now();
+    await Promise.all(files.map(async f => {
+      const filePath = path.join(dir, f);
+      try {
+        const stat = await fs.stat(filePath);
+        if (now - stat.mtimeMs > AUDIO_RETENTION_MS) {
+          await fs.unlink(filePath);
+        }
+      } catch {}
+    }));
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw err;
+  }
+}
+
 // Admins list
 async function readAdmins() {
   const filePath = path.join(__dirname, '..', '..', 'data', 'admins.txt');
@@ -126,4 +164,6 @@ module.exports = {
   readAccounts,
   writeAccounts,
   readAdmins,
+  saveAudio,
+  cleanupOldAudio,
 };

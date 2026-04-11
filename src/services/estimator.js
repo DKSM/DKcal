@@ -111,6 +111,24 @@ async function dkaiVision(image, prompt, system, options = {}) {
   return res.json();
 }
 
+async function transcribeAudio(audioBase64, language = 'fr') {
+  const res = await fetch(`${config.dkaiUrl}/api/transcribe`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${config.dkaiToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ audio: audioBase64, language }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw Object.assign(new Error(err.error || `DKai transcribe ${res.status}`), { status: 502 });
+  }
+
+  return res.json();
+}
+
 // ---------------------------------------------------------------------------
 // Public functions
 // ---------------------------------------------------------------------------
@@ -243,4 +261,4 @@ ${result.content}` },
   return response;
 }
 
-module.exports = { estimateNutrition, estimateFromImage, estimateChat };
+module.exports = { estimateNutrition, estimateFromImage, estimateChat, transcribeAudio };

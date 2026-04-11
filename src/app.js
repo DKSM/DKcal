@@ -11,7 +11,7 @@ const dayRoutes = require('./routes/day');
 const statsRoutes = require('./routes/stats');
 const profileRoutes = require('./routes/profile');
 const adminRoutes = require('./routes/admin');
-const { estimateNutrition, estimateFromImage, estimateChat } = require('./services/estimator');
+const { estimateNutrition, estimateFromImage, estimateChat, transcribeAudio } = require('./services/estimator');
 
 const app = express();
 
@@ -76,6 +76,21 @@ app.post('/api/estimate-image', express.json({ limit: '5mb' }), async (req, res,
     const { image, unit, name } = req.body;
     if (!image) return res.status(400).json({ error: 'Image requise' });
     const result = await estimateFromImage(image, unit || '100g', name || '');
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Audio transcription (dictate food description)
+app.post('/api/transcribe', express.json({ limit: '10mb' }), async (req, res, next) => {
+  try {
+    const { audio, language } = req.body;
+    if (!audio) return res.status(400).json({ error: 'Audio requis' });
+    const storage = require('./services/storage');
+    // Save audio to disk (retained 30 days, non-blocking cleanup)
+    storage.saveAudio(req.session.userId, audio).catch(err => console.error('[audio save]', err));
+    const result = await transcribeAudio(audio, language || 'fr');
     res.json(result);
   } catch (err) {
     next(err);

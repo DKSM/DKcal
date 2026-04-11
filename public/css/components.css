@@ -44,6 +44,7 @@
 .estimate-btn-group {
   display: flex;
   width: 100%;
+  gap: 0;
 }
 
 .estimate-btn-text {
@@ -53,22 +54,37 @@
   min-width: 0;
 }
 
-.estimate-btn-camera {
+.estimate-btn-icon {
   flex: none;
-  width: 52px;
+  width: 48px;
   padding: 0;
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
+  border-radius: 0;
   border-left: 1px solid var(--border-subtle);
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
-.estimate-btn-camera svg {
+.estimate-btn-icon:last-of-type {
+  border-top-right-radius: var(--radius-md);
+  border-bottom-right-radius: var(--radius-md);
+}
+
+.estimate-btn-icon svg {
   pointer-events: none;
-  width: 60%;
-  height: 60%;
+  width: 26px;
+  height: 26px;
+}
+
+.estimate-btn-icon.mic-recording {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  animation: mic-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes mic-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+  50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
 }
 
 /* Estimate summary (2-line max + inline "Voir plus") */
@@ -319,6 +335,26 @@
 
 .estimate-chat-input-row .btn {
   flex-shrink: 0;
+}
+
+.estimate-chat-mic {
+  width: 40px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.estimate-chat-mic svg {
+  pointer-events: none;
+  width: 20px;
+  height: 20px;
+}
+
+.estimate-chat-mic.mic-recording {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  animation: mic-pulse 1.2s ease-in-out infinite;
 }
 
 .estimate-chat-limit {

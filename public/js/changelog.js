@@ -5,6 +5,13 @@ import { openModal } from './modal.js';
 // tag: 'feature' or 'fix'
 const CHANGELOG = [
   {
+    version: 20,
+    date: '8 avril 2026',
+    tag: 'feature',
+    title: 'Estimation par dictée vocale',
+    description: 'Un nouveau bouton micro à côté de l\'appareil photo te permet de dicter ce que tu as mangé. L\'estimation se lance directement sans passer par le champ description, et tu retrouves ta transcription dans le chat "Voir plus" pour vérifier ce qui a été compris. Tu peux aussi continuer la discussion à la voix ou au clavier.',
+  },
+  {
     version: 19,
     date: '4 avril 2026',
     tag: 'feature',

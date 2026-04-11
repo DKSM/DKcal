@@ -1,4 +1,4 @@
-import { createElement, debounce, showToast, compressImage } from './utils.js';
+import { createElement, debounce, showToast, compressImage, recordAudio } from './utils.js';
 import { api } from './api.js';
 import { openModal } from './modal.js';
 import { openItemForm, showHintPopup, showEstimateChat, LOADING_PHRASES } from './items.js';
@@ -274,6 +274,7 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
     // AI estimate row
     let phraseInterval = null;
     let estimateContext = { messages: [] };
+    let lastVoiceTranscript = null;
 
     const estimateBtn = createElement('button', {
       className: 'btn btn-secondary btn-sm estimate-btn-text',
@@ -288,14 +289,59 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
     });
 
     const cameraBtn = createElement('button', {
-      className: 'btn btn-secondary btn-sm estimate-btn-camera',
-      innerHTML: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+      className: 'btn btn-secondary btn-sm estimate-btn-icon',
+      innerHTML: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>',
       title: 'Estimer depuis une photo',
       onClick: () => fileInput.click(),
     });
 
+    let formMicRecorder = null;
+    const formMicBtn = createElement('button', {
+      className: 'btn btn-secondary btn-sm estimate-btn-icon',
+      innerHTML: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>',
+      title: 'Dicter la description',
+      onClick: () => toggleFormMic(),
+    });
+
+    async function toggleFormMic() {
+      if (formMicRecorder) {
+        formMicBtn.disabled = true;
+        formMicBtn.classList.add('btn-loading');
+        try {
+          const audioBase64 = await formMicRecorder.stop();
+          formMicRecorder = null;
+          formMicBtn.classList.remove('mic-recording');
+          const result = await api.post('/api/transcribe', { audio: audioBase64, language: 'fr' });
+          const text = (result.text || '').trim();
+          formMicBtn.classList.remove('btn-loading');
+          formMicBtn.disabled = false;
+          if (text) {
+            lastVoiceTranscript = text;
+            doEstimateVoice(text);
+          } else {
+            showToast('Rien entendu', true);
+          }
+        } catch (err) {
+          showToast(err.message || 'Erreur transcription', true);
+          if (formMicRecorder) { try { formMicRecorder.cancel(); } catch {} formMicRecorder = null; }
+          formMicBtn.classList.remove('mic-recording');
+          formMicBtn.classList.remove('btn-loading');
+          formMicBtn.disabled = false;
+        }
+      } else {
+        try {
+          formMicRecorder = await recordAudio();
+          formMicBtn.classList.add('mic-recording');
+          formMicBtn.title = 'Arrêter l\'enregistrement';
+        } catch (err) {
+          showToast('Micro inaccessible', true);
+        }
+      }
+    }
+
     const estimateRow = createElement('div', { className: 'estimate-btn-group', style: 'margin-bottom: 12px;' });
     estimateRow.appendChild(estimateBtn);
+    estimateRow.appendChild(formMicBtn);
     estimateRow.appendChild(cameraBtn);
     estimateRow.appendChild(fileInput);
     body.appendChild(estimateRow);
@@ -383,11 +429,21 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
       // Build context for chat
       const desc = descInput.value.trim();
       const text = nameInput.value.trim();
-      const primary = desc || text;
-      const nameCtx = desc && text ? ` (produit : "${text}")` : '';
+
+      // Voice mode: use the transcription as the user message so it's visible in the chat
+      let userMessage;
+      if (lastVoiceTranscript) {
+        userMessage = `🎤 ${lastVoiceTranscript}`;
+        lastVoiceTranscript = null;
+      } else {
+        const primary = desc || text;
+        const nameCtx = desc && text ? ` (produit : "${text}")` : '';
+        userMessage = `Donne les valeurs nutritionnelles de "${primary}"${nameCtx}`;
+      }
+
       estimateContext = {
         messages: [
-          { role: 'user', content: `Donne les valeurs nutritionnelles de "${primary}"${nameCtx}` },
+          { role: 'user', content: userMessage },
           { role: 'assistant', content: JSON.stringify({ kcal: result.kcal, protein: result.protein, fat: result.fat, carbs: result.carbs, summary: result.summary, details: result.details }) },
         ],
       };
@@ -521,6 +577,23 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
       try {
         const image = await compressImage(file);
         const result = await api.post('/api/estimate-image', { image, unit: 'portion', name: nameInput.value.trim() });
+        showEstimateResult(result);
+      } catch (err) {
+        showToast(err.message, true);
+        resetEstimate();
+      }
+    }
+
+    async function doEstimateVoice(transcribedText) {
+      const text = nameInput.value.trim();
+      estimateBtn.disabled = true;
+      estimateBtn.classList.add('btn-loading');
+      startLoadingPhrases();
+
+      try {
+        const params = new URLSearchParams({ unit: 'portion', desc: transcribedText });
+        if (text) params.set('q', text);
+        const result = await api.get(`/api/estimate?${params}`);
         showEstimateResult(result);
       } catch (err) {
         showToast(err.message, true);

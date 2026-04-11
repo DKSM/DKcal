@@ -1,4 +1,4 @@
-import { createElement, showToast, debounce, compressImage } from './utils.js';
+import { createElement, showToast, debounce, compressImage, recordAudio } from './utils.js';
 import { api } from './api.js';
 import { openModal, closeModal } from './modal.js';
 import { adjustCal } from './profile.js';
@@ -228,6 +228,7 @@ export function openItemForm(existingItem, onSaved) {
     let pendingEstimate = null;
     let phraseInterval = null;
     let estimateContext = { messages: [] };
+    let lastVoiceTranscript = null;
 
     const estimateBtn = createElement('button', {
       className: 'btn btn-secondary btn-sm estimate-btn-text',
@@ -242,14 +243,59 @@ export function openItemForm(existingItem, onSaved) {
     });
 
     const cameraBtn = createElement('button', {
-      className: 'btn btn-secondary btn-sm estimate-btn-camera',
-      innerHTML: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+      className: 'btn btn-secondary btn-sm estimate-btn-icon',
+      innerHTML: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>',
       title: 'Estimer depuis une photo',
       onClick: () => fileInput.click(),
     });
 
+    let formMicRecorder = null;
+    const formMicBtn = createElement('button', {
+      className: 'btn btn-secondary btn-sm estimate-btn-icon',
+      innerHTML: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>',
+      title: 'Dicter la description',
+      onClick: () => toggleFormMic(),
+    });
+
+    async function toggleFormMic() {
+      if (formMicRecorder) {
+        formMicBtn.disabled = true;
+        formMicBtn.classList.add('btn-loading');
+        try {
+          const audioBase64 = await formMicRecorder.stop();
+          formMicRecorder = null;
+          formMicBtn.classList.remove('mic-recording');
+          const result = await api.post('/api/transcribe', { audio: audioBase64, language: 'fr' });
+          const text = (result.text || '').trim();
+          formMicBtn.classList.remove('btn-loading');
+          formMicBtn.disabled = false;
+          if (text) {
+            lastVoiceTranscript = text;
+            doEstimateVoice(text);
+          } else {
+            showToast('Rien entendu', true);
+          }
+        } catch (err) {
+          showToast(err.message || 'Erreur transcription', true);
+          if (formMicRecorder) { try { formMicRecorder.cancel(); } catch {} formMicRecorder = null; }
+          formMicBtn.classList.remove('mic-recording');
+          formMicBtn.classList.remove('btn-loading');
+          formMicBtn.disabled = false;
+        }
+      } else {
+        try {
+          formMicRecorder = await recordAudio();
+          formMicBtn.classList.add('mic-recording');
+          formMicBtn.title = 'Arrêter l\'enregistrement';
+        } catch (err) {
+          showToast('Micro inaccessible', true);
+        }
+      }
+    }
+
     const estimateRow = createElement('div', { className: 'estimate-btn-group', style: 'margin-bottom: 12px;' });
     estimateRow.appendChild(estimateBtn);
+    estimateRow.appendChild(formMicBtn);
     estimateRow.appendChild(cameraBtn);
     estimateRow.appendChild(fileInput);
     body.insertBefore(estimateRow, panelContainer);
@@ -306,11 +352,21 @@ export function openItemForm(existingItem, onSaved) {
       const text = nameInput.value.trim();
       const unit = currentTab === 'per_unit' ? 'portion' : currentTab === 'per_100ml' ? '100ml' : '100g';
       const unitLabels = { '100g': 'pour 100g de', '100ml': 'pour 100ml de', 'portion': 'Donne les valeurs nutritionnelles de' };
-      const primary = desc || text;
-      const nameCtx = desc && text ? ` (produit : "${text}")` : '';
+
+      // Voice mode: use the transcription as the user message so it's visible in the chat
+      let userMessage;
+      if (lastVoiceTranscript) {
+        userMessage = `🎤 ${lastVoiceTranscript}`;
+        lastVoiceTranscript = null;
+      } else {
+        const primary = desc || text;
+        const nameCtx = desc && text ? ` (produit : "${text}")` : '';
+        userMessage = `${unitLabels[unit]} "${primary}"${nameCtx}`;
+      }
+
       estimateContext = {
         messages: [
-          { role: 'user', content: `${unitLabels[unit]} "${primary}"${nameCtx}` },
+          { role: 'user', content: userMessage },
           { role: 'assistant', content: JSON.stringify({ kcal: result.kcal, protein: result.protein, fat: result.fat, carbs: result.carbs, summary: result.summary, details: result.details }) },
         ],
       };
@@ -437,6 +493,24 @@ export function openItemForm(existingItem, onSaved) {
         const image = await compressImage(file);
         const unit = currentTab === 'per_unit' ? 'portion' : currentTab === 'per_100ml' ? '100ml' : '100g';
         const result = await api.post('/api/estimate-image', { image, unit, name: nameInput.value.trim() });
+        showEstimateResult(result);
+      } catch (err) {
+        showToast(err.message, true);
+        resetEstimate();
+      }
+    }
+
+    async function doEstimateVoice(transcribedText) {
+      const text = nameInput.value.trim();
+      const unit = currentTab === 'per_unit' ? 'portion' : currentTab === 'per_100ml' ? '100ml' : '100g';
+      estimateBtn.disabled = true;
+      estimateBtn.classList.add('btn-loading');
+      startLoadingPhrases();
+
+      try {
+        const params = new URLSearchParams({ unit, desc: transcribedText });
+        if (text) params.set('q', text);
+        const result = await api.get(`/api/estimate?${params}`);
         showEstimateResult(result);
       } catch (err) {
         showToast(err.message, true);
@@ -977,7 +1051,11 @@ export function showEstimateChat(context, onApply) {
   function renderMessages() {
     messagesDiv.innerHTML = '';
 
-    for (let i = 1; i < messages.length; i++) {
+    // Show first user message only if it's a voice transcription
+    const firstIsVoice = messages[0]?.role === 'user' && typeof messages[0].content === 'string' && messages[0].content.startsWith('🎤');
+    const startIdx = firstIsVoice ? 0 : 1;
+
+    for (let i = startIdx; i < messages.length; i++) {
       const msg = messages[i];
       const msgDiv = createElement('div', {
         className: `estimate-chat-msg ${msg.role}${i === selectedIdx ? ' selected' : ''}`,
@@ -1058,12 +1136,57 @@ export function showEstimateChat(context, onApply) {
     placeholder: 'Corriger ou préciser...',
     type: 'text',
   });
+
+  let micRecorder = null;
+  const micBtn = createElement('button', {
+    className: 'btn btn-secondary btn-sm estimate-chat-mic',
+    innerHTML: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>',
+    title: 'Dicter un message',
+    onClick: () => toggleMic(),
+  });
+
+  async function toggleMic() {
+    if (micRecorder) {
+      micBtn.disabled = true;
+      micBtn.classList.add('btn-loading');
+      try {
+        const audioBase64 = await micRecorder.stop();
+        micRecorder = null;
+        micBtn.classList.remove('mic-recording');
+        const result = await api.post('/api/transcribe', { audio: audioBase64, language: 'fr' });
+        const text = (result.text || '').trim();
+        if (text) {
+          chatInput.value = chatInput.value ? `${chatInput.value} ${text}` : text;
+          chatInput.focus();
+        } else {
+          showToast('Rien entendu', true);
+        }
+      } catch (err) {
+        showToast(err.message || 'Erreur transcription', true);
+        if (micRecorder) { try { micRecorder.cancel(); } catch {} micRecorder = null; }
+        micBtn.classList.remove('mic-recording');
+      } finally {
+        micBtn.classList.remove('btn-loading');
+        micBtn.disabled = false;
+      }
+    } else {
+      try {
+        micRecorder = await recordAudio();
+        micBtn.classList.add('mic-recording');
+        micBtn.title = 'Arrêter l\'enregistrement';
+      } catch (err) {
+        showToast('Micro inaccessible', true);
+      }
+    }
+  }
+
   const sendBtn = createElement('button', {
     className: 'btn btn-primary btn-sm',
     textContent: 'Envoyer',
     onClick: () => sendMessage(),
   });
   inputRow.appendChild(chatInput);
+  inputRow.appendChild(micBtn);
   inputRow.appendChild(sendBtn);
   popup.appendChild(inputRow);
 

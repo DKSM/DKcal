@@ -82,6 +82,39 @@ export function compressImage(file, maxSize = 1024, quality = 0.8) {
   });
 }
 
+export async function recordAudio() {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+    ? 'audio/webm;codecs=opus'
+    : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '';
+  const recorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+  const chunks = [];
+  recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+  recorder.start();
+
+  return {
+    stop: () => new Promise((resolve, reject) => {
+      recorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        try {
+          const blob = new Blob(chunks, { type: mime || 'audio/webm' });
+          const buf = await blob.arrayBuffer();
+          const bytes = new Uint8Array(buf);
+          let binary = '';
+          for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+          resolve(btoa(binary));
+        } catch (err) { reject(err); }
+      };
+      recorder.onerror = e => { stream.getTracks().forEach(t => t.stop()); reject(e.error || new Error('Erreur enregistrement')); };
+      recorder.stop();
+    }),
+    cancel: () => {
+      try { recorder.stop(); } catch {}
+      stream.getTracks().forEach(t => t.stop());
+    },
+  };
+}
+
 export function showToast(message, isError = false) {
   const existing = document.querySelector('.toast');
   if (existing) existing.remove();
