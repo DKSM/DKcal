@@ -16,7 +16,9 @@ const { estimateNutrition, estimateFromImage, estimateChat, transcribeAudio } = 
 const app = express();
 
 // Parse JSON & form bodies
-app.use(express.json({ limit: '1mb' }));
+// Limit is high enough to accept audio (voice dictation) and images
+// that have not yet been compressed client-side.
+app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: false }));
 
 // Serve static files (login page accessible without auth)
