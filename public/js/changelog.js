@@ -5,6 +5,13 @@ import { openModal } from './modal.js';
 // tag: 'feature' or 'fix'
 const CHANGELOG = [
   {
+    version: 21,
+    date: '11 avril 2026',
+    tag: 'feature',
+    title: 'Copier-coller des consommations',
+    description: 'Sélectionne une ou plusieurs consommations en cliquant dessus dans la liste du jour, puis utilise "Copier" (ou Ctrl+C). Change de jour, clique "Coller" (ou Ctrl+V) — les consommations sont dupliquées telles quelles, y compris les aliments temporaires. Pratique pour reproduire un repas du jour précédent.',
+  },
+  {
     version: 20,
     date: '8 avril 2026',
     tag: 'feature',

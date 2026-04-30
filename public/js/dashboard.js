@@ -16,6 +16,73 @@ function displayUnit(unitType) {
 
 let currentDate = todayStr();
 let currentDay = null;
+const selectedEntryIds = new Set();
+const CLIPBOARD_KEY = 'dkcal_clipboard_entries';
+
+function readClipboard() {
+  try {
+    const raw = localStorage.getItem(CLIPBOARD_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeClipboard(entries) {
+  try { localStorage.setItem(CLIPBOARD_KEY, JSON.stringify(entries)); } catch {}
+}
+
+function clearClipboard() {
+  try { localStorage.removeItem(CLIPBOARD_KEY); } catch {}
+}
+
+function snapshotEntry(entry) {
+  if (entry.temporary) {
+    return {
+      temporary: true,
+      itemName: entry.itemName,
+      description: entry.description || '',
+      qty: entry.qty,
+      unitType: entry.unitType,
+      kcal: entry.kcal,
+      protein: entry.protein,
+      fat: entry.fat,
+      carbs: entry.carbs,
+    };
+  }
+  return {
+    temporary: false,
+    itemId: entry.itemId,
+    itemName: entry.itemName,
+    qty: entry.qty,
+    unitType: entry.unitType,
+  };
+}
+
+function copySelectedEntries() {
+  if (!currentDay || selectedEntryIds.size === 0) return;
+  const snapshots = currentDay.entries
+    .filter(e => selectedEntryIds.has(e.id))
+    .map(snapshotEntry);
+  writeClipboard(snapshots);
+  selectedEntryIds.clear();
+  renderDay();
+  showToast(`${snapshots.length} ${snapshots.length > 1 ? 'consommations copiées' : 'consommation copiée'}`);
+}
+
+async function pasteClipboard() {
+  const snapshots = readClipboard();
+  if (snapshots.length === 0) return;
+  try {
+    currentDay = await api.put(`/api/day/${currentDate}`, { pasteEntries: snapshots });
+    renderDay();
+    showToast(`${snapshots.length} ${snapshots.length > 1 ? 'consommations collées' : 'consommation collée'}`);
+  } catch (err) {
+    showToast(err.message, true);
+  }
+}
 
 export async function initDashboard(authData = {}) {
   const dashboard = $('#dashboard');
@@ -27,6 +94,7 @@ export async function initDashboard(authData = {}) {
   bindProfileButton();
   bindDeficitHelp();
   bindCheckAll();
+  bindClipboardShortcuts();
   initChangelog();
   initAdmin(authData);
   await loadProfile();
@@ -168,6 +236,7 @@ function changeDate(offset) {
 
 export async function loadDay(dateStr) {
   currentDate = dateStr;
+  selectedEntryIds.clear();
   try {
     currentDay = await api.get(`/api/day/${dateStr}`);
   } catch {
@@ -243,7 +312,8 @@ function renderDay() {
       }
     });
 
-    const item = createElement('div', { className: 'entry-item' }, [
+    const isSelected = selectedEntryIds.has(entry.id);
+    const item = createElement('div', { className: `entry-item${isSelected ? ' entry-selected' : ''}` }, [
       checkbox,
       createElement('span', { className: 'entry-time', textContent: entry.time || '' }),
       createElement('div', { className: 'entry-info' }, [
@@ -261,10 +331,71 @@ function renderDay() {
         onClick: () => removeEntry(entry.id),
       }),
     ]);
+    // Toggle selection on item click (but ignore clicks on interactive children)
+    item.addEventListener('click', (e) => {
+      if (e.target.closest('button, input, .entry-edit, .entry-delete, .entry-checkbox')) return;
+      if (selectedEntryIds.has(entry.id)) selectedEntryIds.delete(entry.id);
+      else selectedEntryIds.add(entry.id);
+      item.classList.toggle('entry-selected');
+      updateClipboardBar();
+    });
     list.appendChild(item);
   }
   updateCheckAllState();
   updateDeficitDisplay();
+  updateClipboardBar();
+}
+
+function updateClipboardBar() {
+  const snapshots = readClipboard();
+  const hasSelection = selectedEntryIds.size > 0;
+  const hasClipboard = snapshots.length > 0;
+
+  let bar = document.getElementById('copy-bar');
+  if (!hasSelection && !hasClipboard) {
+    if (bar) bar.remove();
+    return;
+  }
+
+  if (!bar) {
+    bar = createElement('div', { id: 'copy-bar', className: 'copy-bar' });
+    document.body.appendChild(bar);
+  }
+  bar.innerHTML = '';
+
+  if (hasSelection) {
+    bar.appendChild(createElement('button', {
+      className: 'btn btn-secondary btn-sm',
+      textContent: 'Annuler',
+      onClick: () => {
+        selectedEntryIds.clear();
+        renderDay();
+      },
+    }));
+    bar.appendChild(createElement('button', {
+      className: 'btn btn-primary btn-sm',
+      innerHTML: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copier (${selectedEntryIds.size})`,
+      onClick: copySelectedEntries,
+    }));
+  }
+
+  if (hasClipboard) {
+    if (hasSelection) {
+      bar.appendChild(createElement('span', { className: 'copy-bar-sep' }));
+    }
+    bar.appendChild(createElement('button', {
+      className: 'btn btn-secondary btn-sm paste-btn',
+      innerHTML: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg> Coller (${snapshots.length})`,
+      title: snapshots.map(s => s.itemName).join(', '),
+      onClick: pasteClipboard,
+    }));
+    bar.appendChild(createElement('button', {
+      className: 'paste-clear',
+      innerHTML: '&times;',
+      title: 'Vider le presse-papier',
+      onClick: () => { clearClipboard(); updateClipboardBar(); },
+    }));
+  }
 }
 
 function updateCheckAllState() {
@@ -279,6 +410,27 @@ function updateCheckAllState() {
   const checkedCount = entries.filter(e => e.checked).length;
   checkAll.checked = checkedCount === entries.length;
   checkAll.indeterminate = checkedCount > 0 && checkedCount < entries.length;
+}
+
+function bindClipboardShortcuts() {
+  document.addEventListener('keydown', (e) => {
+    if (!e.ctrlKey && !e.metaKey) return;
+    const tag = (document.activeElement?.tagName || '').toLowerCase();
+    if (['input', 'textarea', 'select'].includes(tag)) return;
+    if (document.activeElement?.isContentEditable) return;
+
+    if (e.key === 'c' || e.key === 'C') {
+      if (selectedEntryIds.size > 0) {
+        e.preventDefault();
+        copySelectedEntries();
+      }
+    } else if (e.key === 'v' || e.key === 'V') {
+      if (readClipboard().length > 0) {
+        e.preventDefault();
+        pasteClipboard();
+      }
+    }
+  });
 }
 
 function bindCheckAll() {

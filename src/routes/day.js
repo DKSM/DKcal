@@ -133,6 +133,42 @@ router.put('/day/:date', async (req, res, next) => {
       }
     }
 
+    // Paste entries (duplicate consumptions from another day)
+    if (req.body.pasteEntries && Array.isArray(req.body.pasteEntries)) {
+      for (const e of req.body.pasteEntries) {
+        if (e.temporary) {
+          existing.entries.push({
+            id: uuidv4(),
+            itemId: null,
+            temporary: true,
+            itemName: e.itemName || 'Temporaire',
+            description: e.description || '',
+            qty: e.qty || 1,
+            unitType: e.unitType || 'unit',
+            time: new Date().toTimeString().slice(0, 5),
+            kcal: Math.round((e.kcal || 0) * 100) / 100,
+            protein: Math.round((e.protein || 0) * 100) / 100,
+            fat: Math.round((e.fat || 0) * 100) / 100,
+            carbs: Math.round((e.carbs || 0) * 100) / 100,
+          });
+        } else if (e.itemId) {
+          // Non-temporary: recompute from current item state (in case macros changed)
+          const nutrition = await computeEntryNutrition(userId, e.itemId, e.qty, e.unitType);
+          existing.entries.push({
+            id: uuidv4(),
+            itemId: e.itemId,
+            qty: e.qty,
+            unitType: e.unitType,
+            time: new Date().toTimeString().slice(0, 5),
+            kcal: nutrition.kcal || 0,
+            protein: nutrition.protein || 0,
+            fat: nutrition.fat || 0,
+            carbs: nutrition.carbs || 0,
+          });
+        }
+      }
+    }
+
     // Replace all entries (for editing)
     if (req.body.entries) {
       const errors = validateDayUpdate(req.body);

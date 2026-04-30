@@ -1122,8 +1122,8 @@ select.input {
 .toast {
   position: fixed;
   bottom: var(--sp-lg);
-  left: 50%;
-  transform: translateX(-50%) translateY(100px);
+  right: var(--sp-lg);
+  transform: translateX(120%);
   background: var(--bg-card-solid);
   color: var(--text-primary);
   padding: 10px var(--sp-lg);
@@ -1135,10 +1135,11 @@ select.input {
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid var(--glass-border);
   border-left: 3px solid var(--accent);
+  max-width: calc(100vw - 2 * var(--sp-lg));
 }
 
 .toast.show {
-  transform: translateX(-50%) translateY(0);
+  transform: translateX(0);
 }
 
 .toast.error {
@@ -1187,16 +1188,16 @@ select.input {
     flex-wrap: wrap;
   }
 
-  /* Toast: wider on mobile */
+  /* Toast: full width but still bottom-right slide on mobile */
   .toast {
     left: var(--sp-md);
     right: var(--sp-md);
-    transform: translateX(0) translateY(100px);
     text-align: center;
+    transform: translateY(120%);
   }
 
   .toast.show {
-    transform: translateX(0) translateY(0);
+    transform: translateY(0);
   }
 }
 

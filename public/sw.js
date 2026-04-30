@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dkcal-v2-voice';
+const CACHE_NAME = 'dkcal-v3-clipboard';
 const STATIC_ASSETS = [
   '/',
   '/css/reset.css',

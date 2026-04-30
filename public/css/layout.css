@@ -879,6 +879,74 @@ body::before {
   background: var(--bg-hover);
 }
 
+.entry-item.entry-selected {
+  background: rgba(16, 163, 127, 0.12);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.entry-item.entry-selected:hover {
+  background: rgba(16, 163, 127, 0.18);
+}
+
+/* Floating copy bar (visible while at least one entry is selected) */
+.copy-bar {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--bg-card-solid);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 200;
+  animation: copy-bar-in 0.15s ease-out;
+}
+
+@keyframes copy-bar-in {
+  from { transform: translate(-50%, 8px); opacity: 0; }
+  to { transform: translate(-50%, 0); opacity: 1; }
+}
+
+.copy-bar-sep {
+  width: 1px;
+  height: 22px;
+  background: var(--border);
+  display: inline-block;
+}
+
+.paste-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.paste-btn svg {
+  flex-shrink: 0;
+}
+
+.paste-clear {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.paste-clear:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
 .entry-checkbox {
   appearance: none;
   -webkit-appearance: none;
