@@ -364,6 +364,21 @@ function updateClipboardBar() {
   bar.innerHTML = '';
 
   if (hasSelection) {
+    // Compute totals over selected entries
+    const totals = { kcal: 0, protein: 0, fat: 0, carbs: 0 };
+    for (const e of currentDay.entries) {
+      if (selectedEntryIds.has(e.id)) {
+        totals.kcal += e.kcal || 0;
+        totals.protein += e.protein || 0;
+        totals.fat += e.fat || 0;
+        totals.carbs += e.carbs || 0;
+      }
+    }
+    bar.appendChild(createElement('div', {
+      className: 'copy-bar-totals',
+      innerHTML: `<span class="copy-bar-kcal">${adjustCal(Math.round(totals.kcal))} kcal</span><span class="macro-p">P: ${Math.round(totals.protein * 10) / 10}g</span><span class="macro-l">L: ${Math.round(totals.fat * 10) / 10}g</span><span class="macro-g">G: ${Math.round(totals.carbs * 10) / 10}g</span>`,
+    }));
+
     bar.appendChild(createElement('button', {
       className: 'btn btn-secondary btn-sm',
       textContent: 'Annuler',

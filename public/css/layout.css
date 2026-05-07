@@ -917,6 +917,34 @@ body::before {
   display: inline-block;
 }
 
+.copy-bar-totals {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.copy-bar-totals .copy-bar-kcal {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.copy-bar-totals .macro-p,
+.copy-bar-totals .macro-l,
+.copy-bar-totals .macro-g {
+  font-weight: 500;
+}
+
+@media (max-width: 600px) {
+  .copy-bar-totals {
+    font-size: 0.72rem;
+    gap: 6px;
+    padding: 0 4px;
+  }
+}
+
 .paste-btn {
   display: inline-flex;
   align-items: center;

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dkcal-v3-clipboard';
+const CACHE_NAME = 'dkcal-v4-clipboard-totals';
 const STATIC_ASSETS = [
   '/',
   '/css/reset.css',
