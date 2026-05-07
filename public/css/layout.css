@@ -931,10 +931,19 @@ body::before {
   color: var(--accent);
 }
 
-.copy-bar-totals .macro-p,
-.copy-bar-totals .macro-l,
+.copy-bar-totals .macro-p {
+  font-weight: 500;
+  color: var(--protein-color);
+}
+
+.copy-bar-totals .macro-l {
+  font-weight: 500;
+  color: var(--warning);
+}
+
 .copy-bar-totals .macro-g {
   font-weight: 500;
+  color: var(--success);
 }
 
 @media (max-width: 600px) {
