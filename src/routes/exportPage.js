@@ -33,6 +33,14 @@ router.get('/export/print', async (req, res, next) => {
 
     const profile = await storage.readProfile(userId);
 
+    // Clamp `from` to the user's earliest known day so big presets (1 year)
+    // don't pad the report with months of empty days before the user started.
+    const knownDatesList = await storage.listDayDates(userId);
+    if (knownDatesList.length > 0) {
+      const earliest = knownDatesList[0];
+      if (from < earliest) from = earliest;
+    }
+
     // Build the full list of dates in the range
     const dates = [];
     let cursor = from;
@@ -42,7 +50,7 @@ router.get('/export/print', async (req, res, next) => {
       cursor = addDays(cursor, 1);
     }
 
-    const knownDates = new Set(await storage.listDayDates(userId));
+    const knownDates = new Set(knownDatesList);
     const days = await Promise.all(dates.map(async (date) => {
       if (!knownDates.has(date)) {
         return { date, tracked: false, kcal: 0, protein: 0, fat: 0, carbs: 0, weight: null };
