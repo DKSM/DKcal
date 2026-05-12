@@ -14,6 +14,9 @@ const adminRoutes = require('./routes/admin');
 const { estimateNutrition, estimateFromImage, estimateChat, transcribeAudio } = require('./services/estimator');
 
 const app = express();
+// Trust the first reverse proxy (nginx/caddy on the VPS) so req.secure reflects
+// the real client protocol — needed for cookie.secure: 'auto' to work in prod.
+app.set('trust proxy', 1);
 
 // Parse JSON & form bodies
 // Limit is high enough to accept audio (voice dictation) and images
@@ -37,7 +40,9 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    // 'auto' sets secure=true only when the request is actually HTTPS
+    // (relies on trust proxy above). Works both for local HTTP and VPS HTTPS.
+    secure: 'auto',
     sameSite: 'strict',
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
   },
@@ -108,6 +113,71 @@ app.post('/api/estimate-chat', async (req, res, next) => {
     }
     const result = await estimateChat(messages, conversation_id || null);
     res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Temporary entries history (for search/reuse)
+app.get('/api/temp-history', async (req, res, next) => {
+  try {
+    const storage = require('./services/storage');
+    const userId = req.session.userId;
+    const dates = await storage.listDayDates(userId);
+
+    // Aggregate temporary entries across all days, keyed by name+description
+    const grouped = new Map();
+    for (const dateStr of dates) {
+      const day = await storage.readDay(userId, dateStr);
+      for (const entry of day.entries) {
+        if (!entry.temporary) continue;
+        const key = `${(entry.itemName || '').toLowerCase()}|${(entry.description || '').toLowerCase()}`;
+        const qty = entry.qty || 1;
+        // Store the per-unit macros so we can re-multiply on add
+        const perUnit = {
+          kcal: (entry.kcal || 0) / qty,
+          protein: (entry.protein || 0) / qty,
+          fat: (entry.fat || 0) / qty,
+          carbs: (entry.carbs || 0) / qty,
+        };
+        const existing = grouped.get(key);
+        if (existing) {
+          existing.count += 1;
+          if (dateStr > existing.lastDate) {
+            existing.lastDate = dateStr;
+            existing.lastQty = qty;
+            existing.unitType = entry.unitType || existing.unitType;
+            existing.perUnit = perUnit;
+            existing.kcal = entry.kcal;
+            existing.protein = entry.protein;
+            existing.fat = entry.fat;
+            existing.carbs = entry.carbs;
+          }
+        } else {
+          grouped.set(key, {
+            itemName: entry.itemName || 'Temporaire',
+            description: entry.description || '',
+            unitType: entry.unitType || 'unit',
+            lastQty: qty,
+            lastDate: dateStr,
+            count: 1,
+            perUnit,
+            kcal: entry.kcal,
+            protein: entry.protein,
+            fat: entry.fat,
+            carbs: entry.carbs,
+          });
+        }
+      }
+    }
+
+    // Sort by usage frequency, then by most recent
+    const list = [...grouped.values()].sort((a, b) => {
+      if (b.count !== a.count) return b.count - a.count;
+      return b.lastDate.localeCompare(a.lastDate);
+    });
+
+    res.json(list);
   } catch (err) {
     next(err);
   }

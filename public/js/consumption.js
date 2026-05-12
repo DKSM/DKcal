@@ -28,10 +28,13 @@ export function openAddConsumption(dateStr, onDone) {
     suggestionsDiv.appendChild(suggestionsList);
     body.appendChild(suggestionsDiv);
 
-    // Temporary item button
+    // Temporary item buttons row
+    const tempBtnRow = createElement('div', {
+      style: 'display: flex; gap: 6px; margin-bottom: 4px;',
+    });
     const tempBtn = createElement('button', {
       className: 'btn btn-secondary',
-      style: 'width: 100%; margin-bottom: 4px;',
+      style: 'flex: 1;',
       textContent: '+ Aliment temporaire',
       onClick: () => {
         openTempItemForm(dateStr, () => {
@@ -40,7 +43,21 @@ export function openAddConsumption(dateStr, onDone) {
         });
       },
     });
-    body.appendChild(tempBtn);
+    const tempHistoryBtn = createElement('button', {
+      className: 'btn btn-secondary',
+      style: 'flex: none; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px;',
+      innerHTML: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg> Historique',
+      title: 'Chercher dans l\'historique des aliments temporaires',
+      onClick: () => {
+        openTempHistoryPopup(dateStr, () => {
+          handle.close();
+          onDone();
+        });
+      },
+    });
+    tempBtnRow.appendChild(tempBtn);
+    tempBtnRow.appendChild(tempHistoryBtn);
+    body.appendChild(tempBtnRow);
 
     // Quantity form (hidden until item selected)
     const qtyForm = createElement('div', { className: 'form-group' });
@@ -655,6 +672,200 @@ function openTempItemForm(dateStr, onDone, existingEntry) {
     body.appendChild(submitBtn);
 
     nameInput.focus();
+  });
+}
+
+function openTempHistoryPopup(dateStr, onDone) {
+  openModal('Historique des aliments temporaires', async (body, handle) => {
+    body.appendChild(createElement('p', {
+      style: 'color: var(--text-muted); font-size: 0.85rem; margin-bottom: 8px;',
+      textContent: 'Recherche dans les aliments temporaires que tu as déjà ajoutés.',
+    }));
+
+    const searchInput = createElement('input', {
+      className: 'input',
+      type: 'text',
+      placeholder: 'Rechercher par nom ou description...',
+      style: 'margin-bottom: 8px;',
+    });
+    body.appendChild(searchInput);
+
+    const resultsList = createElement('div', { className: 'search-results temp-history-results' });
+    body.appendChild(resultsList);
+
+    const loadingEl = createElement('div', {
+      style: 'padding: 20px; text-align: center; color: var(--text-muted);',
+      textContent: 'Chargement…',
+    });
+    resultsList.appendChild(loadingEl);
+
+    let allHistory = [];
+    try {
+      allHistory = await api.get('/api/temp-history');
+    } catch (err) {
+      resultsList.innerHTML = '';
+      resultsList.appendChild(createElement('div', {
+        style: 'padding: 20px; text-align: center; color: var(--danger);',
+        textContent: 'Impossible de charger l\'historique : ' + err.message,
+      }));
+      return;
+    }
+
+    if (allHistory.length === 0) {
+      resultsList.innerHTML = '';
+      resultsList.appendChild(createElement('div', {
+        style: 'padding: 20px; text-align: center; color: var(--text-muted);',
+        textContent: 'Aucun aliment temporaire dans ton historique.',
+      }));
+      return;
+    }
+
+    function renderResults() {
+      const q = searchInput.value.trim().toLowerCase();
+      const filtered = q
+        ? allHistory.filter(h =>
+            h.itemName.toLowerCase().includes(q) ||
+            (h.description || '').toLowerCase().includes(q)
+          )
+        : allHistory;
+
+      resultsList.innerHTML = '';
+      if (filtered.length === 0) {
+        resultsList.appendChild(createElement('div', {
+          style: 'padding: 20px; text-align: center; color: var(--text-muted);',
+          textContent: 'Aucun résultat',
+        }));
+        return;
+      }
+
+      for (const h of filtered) {
+        const row = createElement('div', { className: 'search-result-item temp-history-item' });
+        const main = createElement('div', { className: 'temp-history-main' }, [
+          createElement('div', { className: 'temp-history-name', textContent: h.itemName }),
+        ]);
+        if (h.description) {
+          main.appendChild(createElement('div', {
+            className: 'temp-history-desc',
+            textContent: h.description.length > 80 ? h.description.slice(0, 80) + '…' : h.description,
+          }));
+        }
+        const meta = createElement('div', { className: 'temp-history-meta' });
+        meta.innerHTML = `<span class="copy-bar-kcal">${Math.round(h.kcal)} kcal</span> · <span class="macro-p">P: ${Math.round(h.protein * 10) / 10}g</span> · <span class="macro-l">L: ${Math.round(h.fat * 10) / 10}g</span> · <span class="macro-g">G: ${Math.round(h.carbs * 10) / 10}g</span> <span class="temp-history-qty">(${h.lastQty} ${h.unitType === 'unit' ? 'unité' : h.unitType})</span>`;
+        main.appendChild(meta);
+
+        const usageBadge = createElement('span', {
+          className: 'temp-history-count',
+          textContent: `${h.count}×`,
+          title: `Ajouté ${h.count} fois, dernière fois le ${h.lastDate}`,
+        });
+
+        row.appendChild(main);
+        row.appendChild(usageBadge);
+        row.addEventListener('click', () => showTempHistoryDetail(h));
+        resultsList.appendChild(row);
+      }
+    }
+
+    function showTempHistoryDetail(historyItem) {
+      openModal(historyItem.itemName, (detailBody, detailHandle) => {
+        if (historyItem.description) {
+          detailBody.appendChild(createElement('div', {
+            className: 'form-group',
+          }, [
+            createElement('label', { textContent: 'Description IA' }),
+            createElement('div', {
+              style: 'padding: 8px 12px; background: var(--bg-primary); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); color: var(--text-secondary); font-size: 0.85rem; white-space: pre-wrap;',
+              textContent: historyItem.description,
+            }),
+          ]));
+        }
+
+        // Original record info
+        detailBody.appendChild(createElement('div', {
+          style: 'font-size: 0.75rem; color: var(--text-muted); margin-bottom: 12px;',
+          textContent: `Ajouté ${historyItem.count} fois · dernière utilisation le ${historyItem.lastDate} (${historyItem.lastQty} ${historyItem.unitType === 'unit' ? 'unité' : historyItem.unitType})`,
+        }));
+
+        // Quantity row
+        const qtyGroup = createElement('div', { className: 'form-group' });
+        qtyGroup.appendChild(createElement('label', { textContent: 'Quantité' }));
+        const qtyRow = createElement('div', { className: 'form-row' });
+        const qtyInput = createElement('input', {
+          className: 'input', type: 'number',
+          value: String(historyItem.lastQty),
+          min: '0.1', step: 'any',
+        });
+        const unitSelect = createElement('select', { className: 'input' });
+        for (const u of ['g', 'ml', 'unit']) {
+          const opt = createElement('option', { value: u, textContent: u === 'unit' ? 'unité' : u });
+          if (u === historyItem.unitType) opt.selected = true;
+          unitSelect.appendChild(opt);
+        }
+        qtyRow.appendChild(qtyInput);
+        qtyRow.appendChild(unitSelect);
+        qtyGroup.appendChild(qtyRow);
+        detailBody.appendChild(qtyGroup);
+
+        // Live macro preview
+        const previewRow = createElement('div', {
+          className: 'temp-history-preview',
+          style: 'display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; padding: 10px 12px; background: var(--bg-primary); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); font-size: 0.85rem;',
+        });
+        detailBody.appendChild(previewRow);
+
+        function updatePreview() {
+          const qty = parseFloat(qtyInput.value) || 0;
+          const kcal = Math.round(historyItem.perUnit.kcal * qty);
+          const protein = Math.round(historyItem.perUnit.protein * qty * 10) / 10;
+          const fat = Math.round(historyItem.perUnit.fat * qty * 10) / 10;
+          const carbs = Math.round(historyItem.perUnit.carbs * qty * 10) / 10;
+          previewRow.innerHTML = `<span class="copy-bar-kcal">${kcal} kcal</span><span class="macro-p">P: ${protein}g</span><span class="macro-l">L: ${fat}g</span><span class="macro-g">G: ${carbs}g</span>`;
+        }
+        qtyInput.addEventListener('input', updatePreview);
+        updatePreview();
+
+        const addBtn = createElement('button', {
+          className: 'btn btn-primary',
+          textContent: 'Ajouter à la journée',
+          style: 'width: 100%; margin-top: 8px;',
+          onClick: async () => {
+            const qty = parseFloat(qtyInput.value);
+            if (!qty || qty <= 0) { showToast('Quantité invalide', true); return; }
+            addBtn.disabled = true;
+            try {
+              await api.put(`/api/day/${dateStr}`, {
+                addEntry: {
+                  temporary: true,
+                  itemName: historyItem.itemName,
+                  description: historyItem.description,
+                  qty,
+                  unitType: unitSelect.value,
+                  kcal: historyItem.perUnit.kcal,
+                  protein: historyItem.perUnit.protein,
+                  fat: historyItem.perUnit.fat,
+                  carbs: historyItem.perUnit.carbs,
+                },
+              });
+              detailHandle.close();
+              handle.close();
+              onDone();
+              showToast('Consommation ajoutée');
+            } catch (err) {
+              showToast(err.message, true);
+              addBtn.disabled = false;
+            }
+          },
+        });
+        detailBody.appendChild(addBtn);
+
+        qtyInput.focus();
+        qtyInput.select();
+      });
+    }
+
+    searchInput.addEventListener('input', renderResults);
+    renderResults();
+    searchInput.focus();
   });
 }
 

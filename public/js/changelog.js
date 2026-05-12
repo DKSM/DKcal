@@ -5,6 +5,13 @@ import { openModal } from './modal.js';
 // tag: 'feature' or 'fix'
 const CHANGELOG = [
   {
+    version: 22,
+    date: '14 avril 2026',
+    tag: 'feature',
+    title: 'Réutiliser un aliment temporaire',
+    description: 'Un nouveau bouton "Historique" à côté de "+ Aliment temporaire" te permet de chercher dans tous les aliments temporaires que tu as déjà ajoutés. Sélectionne-en un, ajuste la quantité, et hop — ajouté à la journée sans repasser par l\'IA. Idéal pour les restes du lendemain ou les plats récurrents.',
+  },
+  {
     version: 21,
     date: '11 avril 2026',
     tag: 'feature',
