@@ -51,6 +51,10 @@ app.use(session({
 // Auth routes (before auth gate)
 app.use('/api', authRoutes);
 
+// Printable export page (HTML, not under /api so it bypasses the JSON auth gate;
+// the route itself redirects to / if the user isn't logged in).
+app.use('/', require('./routes/exportPage'));
+
 // Auth gate — everything below requires authentication
 app.use('/api', requireAuth);
 

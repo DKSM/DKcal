@@ -944,6 +944,36 @@ select.input {
 .temp-history-preview .macro-l { color: var(--warning); font-weight: 500; }
 .temp-history-preview .macro-g { color: var(--success); font-weight: 500; }
 
+/* Export modal */
+.export-range-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.export-range-tabs .period-btn {
+  flex: 1 1 auto;
+  min-width: 80px;
+}
+
+.export-custom-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  margin-bottom: 4px;
+}
+
+.export-custom-row .input {
+  flex: 1;
+  min-width: 130px;
+}
+
 .temp-history-qty {
   color: var(--text-muted);
   font-weight: 400;

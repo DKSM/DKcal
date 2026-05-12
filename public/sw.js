@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dkcal-v7-temp-history-colors';
+const CACHE_NAME = 'dkcal-v8-export';
 const STATIC_ASSETS = [
   '/',
   '/css/reset.css',
@@ -16,6 +16,7 @@ const STATIC_ASSETS = [
   '/js/stats.js',
   '/js/modal.js',
   '/js/utils.js',
+  '/js/export.js',
 ];
 
 self.addEventListener('install', (event) => {

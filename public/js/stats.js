@@ -2,6 +2,7 @@ import { createElement, todayStr, addDays, showToast } from './utils.js';
 import { api } from './api.js';
 import { openModal } from './modal.js';
 import { adjustCal } from './profile.js';
+import { openExportModal } from './export.js';
 
 let chartInstances = [];
 
@@ -90,6 +91,15 @@ export function openStatsModal() {
     // Summary
     const summaryDiv = createElement('div', { className: 'stats-summary' });
     body.appendChild(summaryDiv);
+
+    // Export button
+    const exportBtn = createElement('button', {
+      className: 'btn btn-secondary',
+      style: 'width: 100%; margin-top: 12px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;',
+      innerHTML: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Exporter un rapport (PDF)',
+      onClick: () => openExportModal(),
+    });
+    body.appendChild(exportBtn);
 
     async function loadStats(days) {
       const to = todayStr();

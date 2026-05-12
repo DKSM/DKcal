@@ -5,6 +5,13 @@ import { openModal } from './modal.js';
 // tag: 'feature' or 'fix'
 const CHANGELOG = [
   {
+    version: 23,
+    date: '18 avril 2026',
+    tag: 'feature',
+    title: 'Export PDF d\'un rapport nutritionnel',
+    description: 'Dans le menu Statistiques, un nouveau bouton "Exporter un rapport (PDF)" te permet de générer un rapport imprimable sur la période de ton choix (7j, 30j, 1 an, personnalisé...). Le rapport contient les moyennes, la répartition des macros, un graphique des calories par jour, l\'évolution du poids et le détail journalier. Imprime-le ou enregistre-le en PDF d\'un clic.',
+  },
+  {
     version: 22,
     date: '14 avril 2026',
     tag: 'feature',
